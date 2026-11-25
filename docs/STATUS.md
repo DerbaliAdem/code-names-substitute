@@ -15,6 +15,8 @@ Each agent edits **only its own section**, at the end of every working session. 
   Victory (`stats`), Rules. Session rejoin with token, "waking"/"reconnecting" banner, sounds plus haptics on phones.
 - `npm run typecheck` passes and `npm run build:web` succeeds. Web build checked in the browser with fake `room:state`
   (`cn.setView(...)` in the console): board, key view, victory, lobby, 360 px width.
+- Logo "Kapow keyhole" (comic burst + keyhole) as app icon, Android adaptive icon, splash, favicon and the Home header (`scripts/make-icons.mjs`).
+- Animations: card flip + BAM!/OOPS!/MEH/BOOM! pop on reveal, speech-bubble pop when a clue is sent, reduced-motion aware.
 - GitHub Pages workflow now builds the Expo web export. `eas.json` is ready for free Android APK builds.
 
 **In progress**

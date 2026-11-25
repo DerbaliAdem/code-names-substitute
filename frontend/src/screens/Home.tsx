@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { Text, View } from 'react-native';
+import { Image, Text, View } from 'react-native';
 import { Btn, Burst, Cap, Field, Note, Panel } from '../components/ui';
 import { enterRoom } from '../net';
 import { go, setState, useApp } from '../store';
@@ -32,6 +32,7 @@ export default function Home() {
 
   return (
     <View style={{ gap: 18 }}>
+      <Image source={require('../../assets/logo.png')} accessibilityIgnoresInvertColors accessible={false} style={{ width: 120, height: 120, alignSelf: 'center', marginBottom: -34, zIndex: 1, transform: [{ rotate: '8deg' }] }} />
       <Burst title="CODENAMES!" sub="Two teams. One key. Zero room for error." />
       <View style={{ gap: 14, maxWidth: 420, width: '100%', alignSelf: 'center' }}>
         <Btn label="Start a game" onPress={() => run('room:create', {})} disabled={busy} />

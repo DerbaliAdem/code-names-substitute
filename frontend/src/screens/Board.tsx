@@ -1,5 +1,6 @@
 import React, { useEffect, useRef, useState } from 'react';
-import { Pressable, Text, TextInput, View, useWindowDimensions } from 'react-native';
+import { Animated, Easing, Pressable, Text, TextInput, View, useWindowDimensions } from 'react-native';
+import { ND, useReducedMotion } from '../motion';
 import { Body, Btn, Burst, Cap, H3, Note, Panel, Row, Tag } from '../components/ui';
 import { request } from '../net';
 import { MARK, TEAM, type Card, type RoomView } from '../protocol';
@@ -29,14 +30,48 @@ function cardStyle(c: Palette, t: Card | undefined, revealed: boolean) {
   return { bg: c.panel, fg: c.ink, stripe: t === 'r' ? c.red : c.blue };
 }
 
+const POP: Record<string, { word: string; color: (c: Palette) => string }> = {
+  own: { word: 'BAM!', color: (c) => c.hl },
+  wrong: { word: 'OOPS!', color: (c) => c.panel },
+  n: { word: 'MEH', color: (c) => c.panel },
+  x: { word: 'BOOM!', color: (c) => c.red },
+};
+
+/** One board card. When it gets revealed it flips over, bounces, and a comic word pops out of it. */
 function WordCard({ v, i, canGuess, size, onError }: { v: RoomView; i: number; canGuess: boolean; size: number; onError: (m: string) => void }) {
   const { c } = useTheme();
+  const reduced = useReducedMotion();
   const [busy, setBusy] = useState(false);
   const r = v.revealed[i];
-  const t: Card | undefined = r ? r.type : v.key ? v.key[i] : undefined;
-  const st = cardStyle(c, t, !!r);
+  const [shown, setShown] = useState(!!r);        // revealed look on screen (switches at the middle of the flip)
+  const flip = useRef(new Animated.Value(1)).current;
+  const pop = useRef(new Animated.Value(0)).current;
+  const shake = useRef(new Animated.Value(0)).current;
+
+  useEffect(() => {
+    if (!r) { if (shown) setShown(false); return; }   // rematch: new board
+    if (shown) return;
+    if (reduced) { setShown(true); return; }
+    Animated.timing(flip, { toValue: 0, duration: 140, easing: Easing.in(Easing.quad), useNativeDriver: ND }).start(() => {
+      setShown(true);
+      const kick = (x: number) => Animated.timing(shake, { toValue: x, duration: 45, useNativeDriver: ND });
+      Animated.parallel([
+        Animated.spring(flip, { toValue: 1, friction: 4, tension: 170, useNativeDriver: ND }),
+        Animated.sequence([
+          Animated.timing(pop, { toValue: 1, duration: 240, easing: Easing.out(Easing.back(2.5)), useNativeDriver: ND }),
+          Animated.delay(450),
+          Animated.timing(pop, { toValue: 2, duration: 260, useNativeDriver: ND }),
+        ]),
+        r.type === 'x' ? Animated.sequence([kick(-6), kick(6), kick(-5), kick(5), kick(-3), kick(0)]) : Animated.delay(0),
+      ]).start(() => pop.setValue(0));
+    });
+  }, [!!r]); // eslint-disable-line react-hooks/exhaustive-deps
+
+  const t: Card | undefined = r && shown ? r.type : v.key ? v.key[i] : undefined;
+  const st = cardStyle(c, t, !!r && shown);
   const disabled = !canGuess || !!r || busy;
   const word = v.words[i];
+  const popKind = r ? (r.type === 'x' ? 'x' : r.type === 'n' ? 'n' : r.type === r.team ? 'own' : 'wrong') : 'n';
 
   async function guess() {
     setBusy(true);
@@ -48,18 +83,76 @@ function WordCard({ v, i, canGuess, size, onError }: { v: RoomView; i: number; c
   return (
     <Pressable onPress={guess} disabled={disabled} accessibilityRole="button" accessibilityState={{ disabled }}
       accessibilityLabel={`${word}${t ? ', ' + CARD_NAME[t] : ''}${r ? ', revealed' : ''}`}
-      style={{ width: '18.2%', aspectRatio: 1.05, marginBottom: '2%' }}>
+      style={{ width: '18.2%', aspectRatio: 1.05, marginBottom: '2%', zIndex: r && !shown ? 2 : undefined }}>
       {({ pressed }) => (
         <View style={{ flex: 1 }}>
-          {!r && <View style={{ position: 'absolute', left: 3, top: 3, right: -3, bottom: -3, backgroundColor: c.ink }} />}
-          <View style={{ flex: 1, backgroundColor: st.bg, borderWidth: 3, borderColor: c.ink, alignItems: 'center', justifyContent: 'center', padding: 2, overflow: 'hidden', transform: r || pressed ? [{ translateX: 3 }, { translateY: 3 }] : undefined }}>
-            {st.stripe && <View style={{ position: 'absolute', top: 0, left: 0, right: 0, height: 7, backgroundColor: st.stripe }} />}
-            {t && <Text style={{ position: 'absolute', left: 3, top: st.stripe ? 8 : 1, fontSize: size * 0.8, color: st.stripe ?? st.fg }}>{MARK[t]}</Text>}
-            <Text numberOfLines={2} adjustsFontSizeToFit style={{ fontFamily: r ? FONT.display : FONT.bold, fontSize: size, textTransform: 'uppercase', color: st.fg, textAlign: 'center', letterSpacing: 0.5 }}>{word}</Text>
-          </View>
+          {!(r && shown) && <View style={{ position: 'absolute', left: 3, top: 3, right: -3, bottom: -3, backgroundColor: c.ink }} />}
+          <Animated.View style={{ flex: 1, transform: [{ translateX: shake }, { scaleX: flip }] }}>
+            <View style={{ flex: 1, backgroundColor: st.bg, borderWidth: 3, borderColor: c.ink, alignItems: 'center', justifyContent: 'center', padding: 2, overflow: 'hidden', transform: (r && shown) || pressed || busy ? [{ translateX: 3 }, { translateY: 3 }] : undefined }}>
+              {st.stripe && <View style={{ position: 'absolute', top: 0, left: 0, right: 0, height: 7, backgroundColor: st.stripe }} />}
+              {t && <Text style={{ position: 'absolute', left: 3, top: st.stripe ? 8 : 1, fontSize: size * 0.8, color: st.stripe ?? st.fg }}>{MARK[t]}</Text>}
+              <Text numberOfLines={2} adjustsFontSizeToFit style={{ fontFamily: r && shown ? FONT.display : FONT.bold, fontSize: size, textTransform: 'uppercase', color: st.fg, textAlign: 'center', letterSpacing: 0.5 }}>{word}</Text>
+            </View>
+          </Animated.View>
+          {r && (
+            <Animated.View pointerEvents="none" style={{ position: 'absolute', left: -12, right: -12, top: 0, bottom: 0, alignItems: 'center', justifyContent: 'center',
+              opacity: pop.interpolate({ inputRange: [0, 0.3, 1, 2], outputRange: [0, 1, 1, 0] }),
+              transform: [{ scale: pop.interpolate({ inputRange: [0, 1, 2], outputRange: [0.2, 1, 1.35] }) }, { rotate: '-8deg' }] }}>
+              <Text style={{ fontFamily: FONT.display, fontSize: size * 1.7, color: POP[popKind].color(c), letterSpacing: 1,
+                textShadowColor: INK, textShadowOffset: { width: 2, height: 2 }, textShadowRadius: 0 }}>{POP[popKind].word}</Text>
+            </Animated.View>
+          )}
         </View>
       )}
     </Pressable>
+  );
+}
+
+/** Comic speech bubble that pops over the board whenever a spymaster sends a clue. */
+function ClueFlash({ v }: { v: RoomView }) {
+  const { c } = useTheme();
+  const reduced = useReducedMotion();
+  const anim = useRef(new Animated.Value(0)).current;
+  const lastId = useRef(v.clue?.id ?? null);          // don't animate a clue that was already there when we arrived
+  const [clue, setClue] = useState<RoomView['clue']>(null);
+
+  useEffect(() => {
+    const id = v.clue?.id ?? null;
+    if (!id || id === lastId.current) { lastId.current = id; return; }
+    lastId.current = id;
+    setClue(v.clue);
+    anim.setValue(0);
+    Animated.sequence([
+      Animated.spring(anim, { toValue: 1, friction: 5, tension: 120, useNativeDriver: ND }),
+      Animated.delay(reduced ? 1200 : 1500),
+      Animated.timing(anim, { toValue: 2, duration: 280, easing: Easing.in(Easing.quad), useNativeDriver: ND }),
+    ]).start(({ finished }) => { if (finished) setClue(null); });
+  }, [v.clue?.id]); // eslint-disable-line react-hooks/exhaustive-deps
+
+  if (!clue) return null;
+  const teamColor = clue.team === 'r' ? c.red : c.blue;
+  return (
+    <View pointerEvents="none" style={{ position: 'absolute', left: 0, right: 0, top: 0, bottom: 0, alignItems: 'center', justifyContent: 'center', zIndex: 10 }}>
+      <Animated.View accessibilityLiveRegion="assertive" style={{
+        opacity: anim.interpolate({ inputRange: [0, 0.2, 1, 2], outputRange: [0, 1, 1, 0] }),
+        transform: reduced ? [] : [
+          { scale: anim.interpolate({ inputRange: [0, 1, 2], outputRange: [0.3, 1, 0.85] }) },
+          { rotate: anim.interpolate({ inputRange: [0, 1, 2], outputRange: ['-14deg', '-3deg', '2deg'] }) },
+        ],
+        alignItems: 'center' }}>
+        <View style={{ marginRight: 7, marginBottom: 7 }}>
+          <View style={{ position: 'absolute', left: 7, top: 7, right: -7, bottom: -7, backgroundColor: INK, borderRadius: 80 }} />
+          <View style={{ backgroundColor: '#fff', borderWidth: 4, borderColor: INK, borderRadius: 80, paddingVertical: 14, paddingHorizontal: 34, alignItems: 'center' }}>
+            <Text style={{ fontFamily: FONT.bold, fontSize: 13, letterSpacing: 2, color: teamColor, textTransform: 'uppercase' }}>{TEAM[clue.team].g} {TEAM[clue.team].n} spymaster says</Text>
+            <Text style={{ fontFamily: FONT.display, fontSize: 46, letterSpacing: 2, color: INK, textShadowColor: teamColor, textShadowOffset: { width: 3, height: 3 }, textShadowRadius: 0 }}>
+              {clue.word} · {clue.number === 0 ? '∞' : clue.number}
+            </Text>
+          </View>
+        </View>
+        {/* bubble tail */}
+        <View style={{ width: 0, height: 0, marginTop: -9, marginLeft: -60, borderLeftWidth: 14, borderRightWidth: 14, borderTopWidth: 24, borderLeftColor: 'transparent', borderRightColor: 'transparent', borderTopColor: INK }} />
+      </Animated.View>
+    </View>
   );
 }
 
@@ -164,8 +257,11 @@ export default function Board() {
       </View>
       <TimerBar v={v} />
       <Cap>{role}</Cap>
-      <View style={{ flexDirection: 'row', flexWrap: 'wrap', justifyContent: 'space-between' }}>
-        {v.words.map((_, i) => <WordCard key={i} v={v} i={i} canGuess={can.guess} size={fontSize} onError={setMsg} />)}
+      <View>
+        <View style={{ flexDirection: 'row', flexWrap: 'wrap', justifyContent: 'space-between' }}>
+          {v.words.map((_, i) => <WordCard key={i} v={v} i={i} canGuess={can.guess} size={fontSize} onError={setMsg} />)}
+        </View>
+        <ClueFlash v={v} />
       </View>
       <Note text={msg} />
       {can.end && <Btn small variant="alt" label="End turn" onPress={async () => { const r = await request('turn:end'); setMsg(r.ok ? '' : r.error.message); }} />}

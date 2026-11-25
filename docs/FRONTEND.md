@@ -40,13 +40,16 @@ frontend/
 ├── app.json / app.config.js   app name, ids, icons; app.config.js adds the GitHub Pages baseUrl in CI
 ├── eas.json                cloud builds (Android APK / store builds)
 ├── assets/sounds/*.wav     generated, committed
+├── assets/*.png            app icon, Android adaptive icon, splash, favicon, in-app logo ("Kapow keyhole")
 ├── scripts/make-sounds.mjs regenerates the WAVs
+├── scripts/make-icons.mjs  redraws the logo and exports every icon (needs ImageMagick `magick`)
 └── src/
     ├── protocol.ts         types copied from docs/PROTOCOL.md §4. Keep in sync.
     ├── config.ts           SERVER_URL (local / prod / EXPO_PUBLIC_SERVER_URL / ?server= on web)
     ├── store.ts            app state, session/profile/theme/sound persistence, me(), now()
     ├── net.ts              socket, request() → Promise<Ack>, enterRoom, leaveRoom, rejoin, waking banner
     ├── sound.ts            play(), playDiff(prev, next)
+    ├── motion.ts           ND (native driver flag), useReducedMotion()
     ├── theme.ts            palettes, fonts, colours, badges, useTheme()
     ├── components/ui.tsx   Inked, Panel, Btn, Burst, Field, Tag, Avatar, Row, Cap, Body, Note, H3
     └── screens/            Home, Profile, Lobby, Board, Win, Rules
@@ -66,6 +69,10 @@ frontend/
 * **Connection banner:** "Waking the server…" (Render free can take up to 60 s) and "Reconnecting…".
 * **Session:** `cnSession {code, playerId, token}` lives in AsyncStorage. The app rejoins on every socket `connect`. It's cleared on leave and on `room:closed`.
 * **Invites:** on web, `?room=CODE` pre-fills Home and the lobby copies an invite link. On phones the lobby opens the share sheet with the code.
+* **Animations** (React Native `Animated`, no extra library):
+  * Card reveal: the card flips (scaleX), bounces, and a comic word pops out of it: BAM! (own colour), OOPS! (other team), MEH (neutral), BOOM! (assassin, plus a shake).
+  * New clue: a speech bubble "▲ Red spymaster says OCEAN · 2" springs over the board for about 2 s, for every player.
+  * Both are driven by `room:state` changes, so everyone sees them. Nothing animates for state that already existed when you joined, and animations are skipped when the OS has reduced motion turned on.
 * **Accessibility:** every pressable has a role and label, cards announce their colour when it's known, and status texts use `accessibilityLiveRegion`.
 * **Layout:** works at 360 px wide. The board is always 5×5, and content is capped at 720 px wide on tablets and desktop.
 
