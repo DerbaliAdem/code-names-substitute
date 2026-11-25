@@ -36,11 +36,31 @@ export async function leaveRoom() {
   go('home');
 }
 
-async function rejoin() {
+/** Failures that say nothing about the seat itself: keep the session and try again. */
+const TEMPORARY = new Set(['OFFLINE', 'TIMEOUT', 'BAD_RESPONSE', 'RATE_LIMITED', 'INTERNAL']);
+const REJOIN_DELAY = { first: 1000, max: 15000 };
+let rejoinTimer: ReturnType<typeof setTimeout> | undefined;
+let rejoinRun = 0;
+
+/** Take our seat back after a (re)connection. Only gives it up when the server says it's gone. */
+async function rejoin(delay = REJOIN_DELAY.first) {
+  clearTimeout(rejoinTimer);
+  const run = ++rejoinRun;
   const sess = getState().session;
-  if (!sess) return;
+  if (!sess) { if (socket?.connected) setState({ conn: 'online' }); return; }
   const res = await enterRoom('room:join', { code: sess.code, token: sess.token });
-  if (!res.ok) { setSession(null); setView(null); }
+  if (run !== rejoinRun || !socket?.connected) return;   // a newer (or the next) connection takes over
+  // Back in, or the player left or entered another room meanwhile.
+  if (res.ok || getState().session !== sess) return setState({ conn: 'online' });
+  if (TEMPORARY.has(res.error.code)) {
+    setState({ conn: 'reconnecting' });
+    rejoinTimer = setTimeout(() => rejoin(Math.min(delay * 2, REJOIN_DELAY.max)), delay);
+    return;
+  }
+  setSession(null);
+  setView(null);
+  const gone = res.error.code === 'ROOM_NOT_FOUND';
+  setState({ screen: 'home', homeNote: gone ? `Room ${sess.code} no longer exists.` : res.error.message });
 }
 
 /** Ping /health so a sleeping Render instance starts waking before the socket tries. */

@@ -45,7 +45,7 @@ frontend/
 ├── scripts/make-icons.mjs  redraws the logo and exports every icon (needs ImageMagick `magick`)
 └── src/
     ├── protocol.ts         types copied from docs/PROTOCOL.md §4. Keep in sync.
-    ├── config.ts           SERVER_URL (local / prod / EXPO_PUBLIC_SERVER_URL / ?server= on web)
+    ├── config.ts           SERVER_URL (local / prod / EXPO_PUBLIC_SERVER_URL / ?server= on local web only)
     ├── store.ts            app state, session/profile/theme/sound persistence, me(), now()
     ├── net.ts              socket, request() → Promise<Ack>, enterRoom, leaveRoom, rejoin, waking banner
     ├── sound.ts            play(), playDiff(prev, next)
@@ -74,7 +74,8 @@ frontend/
 * **Timer:** `turnEndsAt - (Date.now() + skew)`, where `skew = serverNow - Date.now()`. There's a tick sound in the last 10 s. The client never ends a turn on its own.
 * **Errors:** show `ack.error.message` in the screen's `Note`.
 * **Connection banner:** "Waking the server…" (Render free can take up to 60 s) and "Reconnecting…".
-* **Session:** `cnSession {code, playerId, token}` lives in AsyncStorage. The app rejoins on every socket `connect`. It's cleared on leave and on `room:closed`.
+* **Session:** `cnSession {code, playerId, token}` lives in AsyncStorage. The app rejoins on every socket `connect`. It's cleared on leave, on `room:closed`, and when a rejoin gets a final answer
+  such as `ROOM_NOT_FOUND`. Temporary failures (timeout, rate limit, server error) keep it and retry with a growing delay.
 * **Invites:** on web, `?room=CODE` pre-fills Home and the lobby copies an invite link. On phones the lobby opens the share sheet with the code.
 * **Animations** (React Native `Animated`, no extra library):
   * Card reveal: the card flips (scaleX), bounces, and a comic word pops out of it: BAM! (own colour), OOPS! (other team), MEH (neutral), BOOM! (assassin, plus a shake).

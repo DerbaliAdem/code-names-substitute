@@ -20,5 +20,8 @@ function isLocalWeb(): boolean {
   return Platform.OS === 'web' && typeof window !== 'undefined' && ['localhost', '127.0.0.1'].includes(window.location.hostname);
 }
 
+const DEV = __DEV__ || isLocalWeb();
+
+/** `?server=` only works in development: on the real site a crafted link could send the player's token to another server. */
 export const SERVER_URL: string =
-  fromWebQuery() || process.env.EXPO_PUBLIC_SERVER_URL || (__DEV__ || isLocalWeb() ? LOCAL : PROD);
+  (DEV && fromWebQuery()) || process.env.EXPO_PUBLIC_SERVER_URL || (DEV ? LOCAL : PROD);

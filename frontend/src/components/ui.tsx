@@ -87,12 +87,15 @@ export function Tag({ children }: { children: React.ReactNode }) {
   return <Text style={{ fontFamily: FONT.display, fontSize: 14, letterSpacing: 0.8, backgroundColor: c.ink, color: c.panel, paddingHorizontal: 8 }}>{children}</Text>;
 }
 
+/** First character of a name; whole even when it's an emoji. */
+export const initial = (name: string) => ([...name][0] ?? '?').toUpperCase();
+
 export function Avatar({ name, color, badge, small }: { name: string; color: string; badge: string; small?: boolean }) {
   const size = small ? 34 : 56;
   const em = small ? 16 : 22;
   return (
     <Inked offset={small ? 2 : 3} rotate="-3deg" style={{ width: size, height: size, backgroundColor: /^#[0-9a-f]{6}$/i.test(color) ? color : '#888', borderWidth: small ? 2 : 3, borderColor: INK, alignItems: 'center', justifyContent: 'center' }}>
-      <Text style={{ fontFamily: FONT.display, fontSize: small ? 18 : 28, color: '#fff' }}>{(name || '?')[0].toUpperCase()}</Text>
+      <Text style={{ fontFamily: FONT.display, fontSize: small ? 18 : 28, color: '#fff' }}>{initial(name)}</Text>
       <View style={{ position: 'absolute', right: -7, bottom: -7, width: em, height: em, backgroundColor: '#ffd23c', borderWidth: 2, borderColor: INK, alignItems: 'center', justifyContent: 'center' }}>
         <Text style={{ fontSize: small ? 9 : 13, color: INK }}>{badge}</Text>
       </View>

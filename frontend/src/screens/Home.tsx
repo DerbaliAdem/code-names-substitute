@@ -1,7 +1,7 @@
 // Home = "agent dossier": your agent file card, one big start button, room code in 5 letter boxes.
 import React, { useEffect, useRef, useState } from 'react';
 import { Pressable, Text, TextInput, View } from 'react-native';
-import { Btn, Cap, Inked, Note, Panel } from '../components/ui';
+import { Btn, Cap, Inked, initial, Note, Panel } from '../components/ui';
 import { enterRoom, request } from '../net';
 import { getState, go, setProfile, setState, useApp } from '../store';
 import { ALIASES, BADGES, COLORS, FONT, INK, useTheme } from '../theme';
@@ -29,7 +29,7 @@ function Dossier() {
       <Panel>
         <View style={{ flexDirection: 'row', gap: 16, alignItems: 'center' }}>
           <Inked offset={3} rotate="-3deg" style={{ width: 84, height: 96, backgroundColor: p.color, borderWidth: 3, borderColor: INK, alignItems: 'center', justifyContent: 'center' }}>
-            <Text style={{ fontFamily: FONT.display, fontSize: 52, color: '#fff' }}>{name[0].toUpperCase()}</Text>
+            <Text style={{ fontFamily: FONT.display, fontSize: 52, color: '#fff' }}>{initial(name)}</Text>
             <View style={{ position: 'absolute', right: -10, bottom: -10, width: 28, height: 28, backgroundColor: '#ffd23c', borderWidth: 2, borderColor: INK, alignItems: 'center', justifyContent: 'center' }}>
               <Text style={{ fontSize: 15, color: INK }}>{p.badge}</Text>
             </View>
@@ -87,6 +87,7 @@ export default function Home() {
   const { view, inviteCode, homeNote, session } = useApp();
   const { c } = useTheme();
   const [code, setCode] = useState(inviteCode);
+  useEffect(() => { if (inviteCode) setCode(inviteCode); }, [inviteCode]);   // the invite link is read after Home is on screen
   const [busy, setBusy] = useState(false);
   const say = (t: string) => setState({ homeNote: t });
 
