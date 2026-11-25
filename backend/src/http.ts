@@ -1,5 +1,6 @@
 import express, { type Express, type NextFunction, type Request, type Response } from 'express';
 import { errorFields, type Logger } from './logger.js';
+import { isAllowedOrigin } from './origin.js';
 
 export interface HttpOptions {
   corsOrigins: readonly string[];
@@ -20,7 +21,7 @@ export function createApp({ corsOrigins, roomCount, logger }: HttpOptions): Expr
       Vary: 'Origin',
     });
     const { origin } = req.headers;
-    if (origin && corsOrigins.includes(origin)) res.set('Access-Control-Allow-Origin', origin);
+    if (origin && isAllowedOrigin(req, corsOrigins)) res.set('Access-Control-Allow-Origin', origin);
     next();
   });
 

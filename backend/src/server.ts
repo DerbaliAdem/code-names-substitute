@@ -50,7 +50,7 @@ export function createServer({ config, logger, now = Date.now, schedule = realSc
   }
 
   const io: GameServer = new Server(http, {
-    cors: { origin: [...config.corsOrigins] },
+    cors: (request, callback) => callback(null, { origin: isAllowedOrigin(request, config.corsOrigins) }),
     maxHttpBufferSize: MAX_MESSAGE_BYTES,
     connectTimeout: 10_000,
     serveClient: false,

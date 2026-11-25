@@ -62,6 +62,33 @@ describe('connections', () => {
     await expect(s.connect({ extraHeaders: { origin: 'http://localhost:8081' } })).resolves.toBeDefined();
   });
 
+  it.each(['http://localhost:8082', 'http://127.0.0.1:19006', 'http://[::1]:3001'])(
+    'accepts %s in local development, over every transport and for /health',
+    async (origin) => {
+      await start();
+      for (const transport of ['websocket', 'polling']) {
+        await expect(s.connect({ transports: [transport], extraHeaders: { origin } })).resolves.toBeDefined();
+      }
+      const health = await fetch(`${s.url}/health`, { headers: { origin } });
+      expect(health.headers.get('access-control-allow-origin')).toBe(origin);
+      const polling = await fetch(`${s.url}/socket.io/?EIO=4&transport=polling`, { headers: { origin } });
+      expect(polling.headers.get('access-control-allow-origin')).toBe(origin);
+    },
+  );
+
+  it('refuses an unlisted local origin when the server is reached under a public name', async () => {
+    await start();
+    const extraHeaders = { origin: 'http://localhost:8082', host: 'game.example' };
+    await expect(s.connect({ extraHeaders })).rejects.toThrow();
+  });
+
+  it('refuses a site that only looks local', async () => {
+    await start();
+    for (const origin of ['http://localhost.evil.example', 'http://127.0.0.1.evil.example', 'http://evil.example:8081']) {
+      await expect(s.connect({ extraHeaders: { origin } })).rejects.toThrow();
+    }
+  });
+
   it('accepts native apps, which send no origin or (React Native WebSockets) the address of the server itself', async () => {
     await start();
     await expect(s.connect()).resolves.toBeDefined();

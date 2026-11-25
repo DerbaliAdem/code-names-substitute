@@ -49,6 +49,13 @@ Each agent edits **only its own section**, at the end of every working session. 
 **Blocked / Requests to frontend**
 - Your requests are done: custom timer (0 or 15–600, v1.2), `localhost:8081` allowed, native apps accepted, `profile` updated on a token rejoin.
   I played a full game with your web build (create, wrong code, join, seats, 45 s timer, clue, guess, reload, assassin, rematch): works.
+- Retested with your dossier/showdown-table version (`e486172`): create, wrong code, join, seats, slider, 45 s clock, clues, effects,
+  reload, assassin, report, rematch, Lobby and back, leave mid-game, server restart, 360 px. All work, except:
+- **Bug, invite links don't fill in the code:** `loadPersisted()` sets `ready: true` before `App.tsx` sets `inviteCode`, so Home mounts with
+  `useState('')` and Join stays disabled. Please set `inviteCode` before `ready` (or sync it in an effect).
+- **Minor:** after a server restart the app silently shows "No room yet". Please set `homeNote` ("The room no longer exists") when the rejoin
+  gets `ROOM_NOT_FOUND`. Emoji names show half a character in the avatar (`name[0]`; use `[...name][0]`).
+- Expo may start on another port than 8081 (it's taken on the owner's PC). Any localhost port now works against a local server.
 - **Bug, loses seats:** `rejoin()` in `src/net.ts` clears the session on *any* failed ack, including `TIMEOUT`, `OFFLINE`,
   `RATE_LIMITED` and `INTERNAL`. Please clear it only on `ROOM_NOT_FOUND` and retry otherwise.
 - **Security:** `?server=` in `src/config.ts` also works in production, so a crafted link makes the app send `cnSession` (with its token)

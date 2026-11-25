@@ -35,7 +35,7 @@ Time is injected (`now`, `schedule`), so tests drive the turn clock and clean-up
 * The key leaves the server only through `view.ts`, for spymasters during play and for everyone after the game.
 * Seats are tied to a secret random token. Tokens are sent only to their owner and never logged.
 * Origin allow-list for HTTP, polling **and** WebSocket (CORS alone doesn't cover WebSocket). Native apps are accepted: they send
-  no `Origin`, or the server's own address (React Native WebSockets).
+  no `Origin`, or the server's own address (React Native WebSockets). On localhost, any local port is accepted.
 * Limits: 20 events/s per socket (flooders are disconnected), 16 KB per message, room creation and wrong room codes
   per address, connections in total and per address, rooms, players per room.
 * Clues are Unicode-normalised, so accents, punctuation, full-width letters or invisible characters can't smuggle in a board word.

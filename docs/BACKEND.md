@@ -105,7 +105,7 @@ backend/
 9. **CORS:** `new Server(http, { cors: { origin: config.corsOrigins } })`. Allow the GitHub Pages origin
    (`https://derbaliadem.github.io`) and the Expo web dev server (`http://localhost:8081`) by default.
    CORS doesn't cover WebSocket, so `allowRequest` checks the origin too (`origin.ts`). Native apps send no Origin, or the
-   server's own address on React Native WebSockets: both must be accepted.
+   server's own address on React Native WebSockets: both must be accepted. On localhost, any local port is accepted.
 10. **`/health`:** returns `{ ok: true, rooms, uptime }`. Render uses it as the health check, and the frontend uses it to wake the server.
 
 ## Order of work (commit + push after each)
