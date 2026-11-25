@@ -7,6 +7,8 @@ import { GameError } from './errors.js';
 import { expireTurn, newGame, readiness, startGame, type GameState } from './game.js';
 import type { Profile, Role, Settings, Team } from './types.js';
 
+const deal = (room: Room) => newGame(undefined, room.settings.lang);
+
 const CODE_ALPHABET = 'ABCDEFGHJKLMNPQRSTUVWXYZ';
 const CODE_LENGTH = 5;
 const ID_ALPHABET = 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789';
@@ -117,7 +119,7 @@ export class RoomStore {
     const room: Room = {
       code,
       hostId: player.id,
-      settings: { timer: 0 },
+      settings: { timer: 0, lang: 'en' },
       players: new Map([[player.id, player]]),
       game: newGame(),
       turnEndsAt: null,
@@ -166,7 +168,7 @@ export class RoomStore {
     }
     this.updateEmptySince(room);
     const aborted = room.game.phase === 'play' ? readiness(room.players.values()) : null;
-    if (aborted) this.setGame(room, newGame());
+    if (aborted) this.setGame(room, deal(room));
     return { aborted };
   }
 
@@ -241,7 +243,9 @@ export class RoomStore {
     if (timer !== undefined && !isValidTimer(timer)) {
       throw new GameError('INVALID_NUMBER', `The timer must be off, or ${MIN_TIMER} to ${MAX_TIMER} seconds.`);
     }
+    const relang = settings.lang !== undefined && settings.lang !== room.settings.lang;
     room.settings = { ...room.settings, ...settings };
+    if (relang) this.setGame(room, deal(room));
   }
 
   start(room: Room, playerId: string): void {
@@ -253,13 +257,15 @@ export class RoomStore {
   abort(room: Room, playerId: string): void {
     this.assertHost(room, playerId, 'Only the host can stop the game.');
     if (room.game.phase !== 'play') throw new GameError('WRONG_PHASE', 'No game is running.');
-    this.setGame(room, newGame());
+    this.setGame(room, deal(room));
   }
 
-  rematch(room: Room, playerId: string): void {
+  /** New board, same seats; with `swap`, every seated player changes team and keeps their role. */
+  rematch(room: Room, playerId: string, { swap = false }: { swap?: boolean } = {}): void {
     this.assertHost(room, playerId, 'Only the host can start a rematch.');
     if (room.game.phase !== 'over') throw new GameError('WRONG_PHASE', 'The game is not over yet.');
-    this.setGame(room, newGame());
+    if (swap) for (const p of room.players.values()) if (p.team) p.team = p.team === 'r' ? 'b' : 'r';
+    this.setGame(room, deal(room));
   }
 
   player(room: Room, playerId: string): PlayerInternal {

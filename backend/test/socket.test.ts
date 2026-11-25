@@ -21,7 +21,7 @@ describe('rooms', () => {
       token: expect.any(String) as string,
     });
     const view = await c.until((v) => v.players.length === 1);
-    expect(view).toMatchObject({ code: ack.code, you: ack.playerId, phase: 'lobby', settings: { timer: 0 } });
+    expect(view).toMatchObject({ code: ack.code, you: ack.playerId, phase: 'lobby', settings: { timer: 0, lang: 'en' } });
     expect(view.players[0]).toMatchObject({ name: 'Ada', isHost: true, connected: true });
     expect(c.timeline).toEqual(['ack', 'state']);
   });
@@ -153,7 +153,7 @@ describe('lobby', () => {
     await b.until((v) => v.settings.timer === 37);
     await a.send('settings:update', { settings: { timer: 90, unknown: true } });
     const view = await a.until((v) => v.settings.timer === 90);
-    expect(view.settings).toEqual({ timer: 90 });
+    expect(view.settings).toEqual({ timer: 90, lang: 'en' });
     expect(view.players[1]).toMatchObject({ name: 'Bea', team: 'b', role: 'spymaster' });
     await b.send('seat:leave', {});
     await a.until((v) => v.players[1]?.team === null);
@@ -286,12 +286,12 @@ describe('play', () => {
     expect(await otherSpy.code('clue:give', { word: 'yyy', number: 1 })).toBe('WRONG_PHASE');
     expect(await ra.code('game:rematch', {})).toBe('NOT_HOST');
     const oldWords = rs.view.words;
-    expect(await rs.code('game:rematch', {})).toBe('ok');
+    expect(await rs.code('game:rematch', { swap: true })).toBe('ok');
     for (const c of all) {
       const view = await c.until((v) => v.phase === 'lobby');
       expect(view).toMatchObject({ key: null, over: null, stats: null, revealed: {}, log: [] });
       expect(view.words).not.toEqual(oldWords);
-      expect(view.players.every((p) => p.team && p.role)).toBe(true);
+      expect(view.players.map((p) => `${p.team}:${p.role}`)).toEqual(['b:spymaster', 'b:agent', 'r:spymaster', 'r:agent']);
     }
     expect(await rs.code('game:start', {})).toBe('ok');
   });

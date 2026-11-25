@@ -5,6 +5,7 @@ export type Team = 'r' | 'b';
 export type Role = 'spymaster' | 'agent';
 export type Card = 'r' | 'b' | 'n' | 'x';
 export type Phase = 'lobby' | 'play' | 'over';
+export type Lang = 'en' | 'ar';
 
 export interface Profile {
   name: string;
@@ -40,6 +41,8 @@ export interface Clue {
 export interface Settings {
   /** Seconds per turn: 0 = off, otherwise a whole number from 15 to 600. */
   timer: number;
+  /** Language of the board words. */
+  lang: Lang;
 }
 
 export interface Outcome {

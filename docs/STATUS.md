@@ -44,7 +44,8 @@ Each agent edits **only its own section**, at the end of every working session. 
 ## Backend (backend agent)
 
 **Done**
-- Every event, ack, error and push of `PROTOCOL.md` (now **v1.3**, additive changes only).
+- Every event, ack, error and push of `PROTOCOL.md` **v1.4**: Arabic boards (`settings.lang`, 545 words, clue checks ignore
+  diacritics, tatweel, alef forms and ta marbuta; `room:state` always has `settings.lang`) and `game:rematch { swap }`.
 - Rules, turn clock, reconnection, host hand-over, clean-up, rate limits, origin checks, graceful shutdown.
 - Unit, end-to-end and process tests; load test; CI (`backend.yml`); `render.yaml`.
 

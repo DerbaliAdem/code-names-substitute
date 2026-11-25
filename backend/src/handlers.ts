@@ -252,7 +252,8 @@ export class GameHandlers {
     }),
 
     'settings:update': this.inRoom(({ room, player }, { settings }: Payload<'settings:update'>) => {
-      this.store.updateSettings(room, player.id, settings.timer === undefined ? {} : { timer: settings.timer });
+      const { timer, lang } = settings;
+      this.store.updateSettings(room, player.id, { ...(timer === undefined ? {} : { timer }), ...(lang === undefined ? {} : { lang }) });
     }),
 
     'game:start': this.inRoom(({ room, player }) => {
@@ -266,8 +267,8 @@ export class GameHandlers {
       return [{ kind: 'abort', data: { reason: 'The host stopped the game.' } }];
     }),
 
-    'game:rematch': this.inRoom(({ room, player }) => {
-      this.store.rematch(room, player.id);
+    'game:rematch': this.inRoom(({ room, player }, { swap }: Payload<'game:rematch'>) => {
+      this.store.rematch(room, player.id, { swap });
     }),
 
     'clue:give': this.inRoom(({ room, player }, { word, number }: Payload<'clue:give'>) => {

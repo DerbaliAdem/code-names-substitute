@@ -14,7 +14,7 @@ import {
   type GameState,
 } from '../src/game.js';
 import type { Card, ErrorCode, Team } from '../src/types.js';
-import { WORDS } from '../src/words.js';
+import { WORDS, WORDS_AR } from '../src/words.js';
 
 const redSpy: Actor = { id: 'rs', team: 'r', role: 'spymaster' };
 const redAgent: Actor = { id: 'ra', team: 'r', role: 'agent' };
@@ -94,6 +94,33 @@ describe('newGame', () => {
     const seen = new Set<number>();
     for (let i = 0; i < 1000; i++) seen.add(newGame().key.indexOf('x'));
     expect(seen.size).toBe(25);
+  });
+});
+
+describe('newGame in Arabic', () => {
+  it('deals 25 words from the Arabic list, as they are', () => {
+    const g = newGame(undefined, 'ar');
+    expect(new Set(g.words).size).toBe(25);
+    expect(g.words.every((w) => WORDS_AR.includes(w))).toBe(true);
+  });
+});
+
+describe('Arabic clues', () => {
+  const AR = ['بحر', 'مدرسة', 'أسد', 'كتاب', ...BOARD.slice(4)];
+  const arabic = () => playing({ words: AR });
+  it.each([
+    ['the same word', 'بحر'],
+    ['the word with the article', 'البحر'],
+    ['the word with diacritics', 'بَحْر'],
+    ['the word stretched with tatweel', 'بـحر'],
+    ['another alef form', 'اسد'],
+    ['ha for ta marbuta', 'مدرسه'],
+    ['a longer word containing it', 'كتابات'],
+  ])('rejects %s', (_, word) => {
+    expect(code(() => giveClue(arabic(), redSpy, word, 1))).toBe('INVALID_CLUE');
+  });
+  it('accepts an unrelated word and keeps it in Arabic', () => {
+    expect(giveClue(arabic(), redSpy, ' شمس ', 1).clue?.word).toBe('شمس');
   });
 });
 

@@ -54,7 +54,7 @@ describe('profile', () => {
 
 describe('other payloads', () => {
   it('accepts a missing payload where the contract says {}', () => {
-    for (const event of ['room:leave', 'seat:leave', 'game:start', 'turn:end', 'game:rematch', 'game:abort'] as const) {
+    for (const event of ['room:leave', 'seat:leave', 'game:start', 'turn:end', 'game:abort'] as const) {
       for (const payload of [undefined, null, {}, { extra: 1 }]) {
         expect(schemas[event].safeParse(payload).success).toBe(true);
       }
@@ -73,6 +73,20 @@ describe('other payloads', () => {
     expect(['45', null, true, [45]].some(ok)).toBe(false);
     expect(schemas['settings:update'].safeParse({ settings: {} }).success).toBe(true);
     expect(schemas['settings:update'].safeParse({}).success).toBe(false);
+  });
+
+  it('accepts English and Arabic boards only', () => {
+    const ok = (lang: unknown) => schemas['settings:update'].safeParse({ settings: { lang } }).success;
+    expect(['en', 'ar'].every(ok)).toBe(true);
+    expect(['fr', 'AR', '', null, 1].some(ok)).toBe(false);
+  });
+
+  it('takes an optional swap on rematch', () => {
+    const parse = (p: unknown) => schemas['game:rematch'].safeParse(p);
+    expect(parse({ swap: true }).data).toEqual({ swap: true });
+    expect(parse(undefined).data).toEqual({ swap: false });
+    expect(parse({}).data).toEqual({ swap: false });
+    expect(parse({ swap: 'yes' }).success).toBe(false);
   });
 
   it('only accepts card indexes 0 to 24', () => {

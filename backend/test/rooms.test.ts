@@ -1,6 +1,7 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { giveClue, guess } from '../src/game.js';
 import { RoomStore, type PlayerInternal, type Room } from '../src/rooms.js';
+import { WORDS, WORDS_AR } from '../src/words.js';
 import { codeOf, fakeClock, profile } from './helpers.js';
 
 const MIN = 60_000;
@@ -274,14 +275,14 @@ describe('seats and settings', () => {
   it.each([0, 15, 37, 600])('accepts a turn timer of %s seconds', (timer) => {
     const { room, player } = create();
     store.updateSettings(room, player.id, { timer });
-    expect(room.settings).toEqual({ timer });
+    expect(room.settings).toEqual({ timer, lang: 'en' });
   });
 
   it.each([1, 14, 601, -15, 45.5, NaN, Infinity])('refuses a turn timer of %s and keeps the old one', (timer) => {
     const { room, player } = create();
     store.updateSettings(room, player.id, { timer: 90 });
     expect(codeOf(() => store.updateSettings(room, player.id, { timer }))).toBe('INVALID_NUMBER');
-    expect(room.settings).toEqual({ timer: 90 });
+    expect(room.settings).toEqual({ timer: 90, lang: 'en' });
   });
 
   it('runs a custom timer', () => {
@@ -290,6 +291,30 @@ describe('seats and settings', () => {
     store.start(room, rs.id);
     clock.advance(37_000);
     expect(room.game.turnNo).toBe(2);
+  });
+
+  it('starts in English', () => {
+    expect(create().room.settings).toEqual({ timer: 0, lang: 'en' });
+  });
+
+  it('deals a new board in the chosen language, and keeps it when nothing changes', () => {
+    const { room, player } = create();
+    store.updateSettings(room, player.id, { lang: 'ar' });
+    const arabic = room.game.words;
+    expect(arabic.every((w) => WORDS_AR.includes(w))).toBe(true);
+    store.updateSettings(room, player.id, { lang: 'ar', timer: 45 });
+    expect(room.game.words).toBe(arabic);
+    expect(room.settings).toEqual({ timer: 45, lang: 'ar' });
+    store.updateSettings(room, player.id, { lang: 'en' });
+    expect(room.game.words.every((w) => WORDS.includes(w))).toBe(true);
+  });
+
+  it('only lets the host change the language, in the lobby', () => {
+    const { room, rs, ra } = seatedRoom();
+    expect(codeOf(() => store.updateSettings(room, ra.id, { lang: 'ar' }))).toBe('NOT_HOST');
+    store.start(room, rs.id);
+    expect(codeOf(() => store.updateSettings(room, rs.id, { lang: 'ar' }))).toBe('WRONG_PHASE');
+    expect(room.settings.lang).toBe('en');
   });
 
   it('does not start an incomplete game', () => {
@@ -317,6 +342,30 @@ describe('abort and rematch', () => {
     expect(room.game).toMatchObject({ phase: 'lobby', turnNo: 1, over: null, log: [] });
     expect(room.game.words).not.toEqual(oldWords);
     expect(ra).toMatchObject({ team: 'r', role: 'agent' });
+  });
+
+  it('swaps every seated player to the other team on request, keeping roles', () => {
+    const seated = startedRoom();
+    const { room, rs, ra, bs, ba } = seated;
+    const watcher = join(room.code).player;
+    tapAssassin(seated);
+    store.rematch(room, rs.id, { swap: true });
+    expect([rs, ra, bs, ba].map((p) => `${p.team}:${p.role}`)).toEqual(['b:spymaster', 'b:agent', 'r:spymaster', 'r:agent']);
+    expect(watcher.team).toBeNull();
+    expect(codeOf(() => store.start(room, rs.id))).toBe('none');
+  });
+
+  it('deals rematches and stopped games in the room language', () => {
+    const seated = seatedRoom();
+    const { room, rs } = seated;
+    store.updateSettings(room, rs.id, { lang: 'ar' });
+    store.start(room, rs.id);
+    store.abort(room, rs.id);
+    expect(room.game.words.every((w) => WORDS_AR.includes(w))).toBe(true);
+    store.start(room, rs.id);
+    tapAssassin(seated);
+    store.rematch(room, rs.id);
+    expect(room.game.words.every((w) => WORDS_AR.includes(w))).toBe(true);
   });
 });
 

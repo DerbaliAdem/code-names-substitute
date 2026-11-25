@@ -51,11 +51,14 @@ export const schemas = {
   'seat:take': z.object({ team: z.enum(['r', 'b']), role: z.enum(['spymaster', 'agent']) }),
   'seat:leave': nothing,
   'settings:update': z.object({
-    settings: z.object({ timer: z.number().optional() }),
+    settings: z.object({ timer: z.number().optional(), lang: z.enum(['en', 'ar']).optional() }),
   }),
   'game:start': nothing,
   'game:abort': nothing,
-  'game:rematch': nothing,
+  'game:rematch': z
+    .object({ swap: z.boolean().optional() })
+    .nullish()
+    .transform((payload) => ({ swap: payload?.swap ?? false })),
   'clue:give': z.object({ word: z.string().max(200), number: z.number() }),
   guess: z.object({ index: z.number().int().min(0).max(24) }),
   'turn:end': nothing,

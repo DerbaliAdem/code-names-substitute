@@ -4,8 +4,8 @@
  */
 import { randomInt } from 'node:crypto';
 import { GameError } from './errors.js';
-import type { Card, Clue, Outcome, Phase, Reveal, Role, Stats, Team } from './types.js';
-import { WORDS } from './words.js';
+import type { Card, Clue, Lang, Outcome, Phase, Reveal, Role, Stats, Team } from './types.js';
+import { WORDS, WORDS_AR } from './words.js';
 
 export const BOARD_SIZE = 25;
 const FIRST_TEAM_CARDS = 9;
@@ -51,9 +51,9 @@ function draw<T>(items: readonly T[], count: number, random: RandomInt): T[] {
   return pool.slice(0, count);
 }
 
-export function newGame(random: RandomInt = (max) => randomInt(max)): GameState {
+export function newGame(random: RandomInt = (max) => randomInt(max), lang: Lang = 'en'): GameState {
   const first: Team = random(2) === 0 ? 'r' : 'b';
-  const words = draw(WORDS, BOARD_SIZE, random);
+  const words = draw(lang === 'ar' ? WORDS_AR : WORDS, BOARD_SIZE, random);
   const cards: Card[] = [
     ...Array<Card>(FIRST_TEAM_CARDS).fill(first),
     ...Array<Card>(SECOND_TEAM_CARDS).fill(other(first)),
@@ -121,7 +121,13 @@ function cleanClue(word: string): string {
 
 /** Comparison form: letters and digits only, so accents and punctuation can't disguise a board word. */
 function skeleton(word: string): string {
-  return word.normalize('NFKD').replace(/[^\p{L}\p{N}]/gu, '').toUpperCase();
+  return word
+    .normalize('NFKD')
+    .replace(/[^\p{L}\p{N}]|\u0640/gu, '') // marks and punctuation, and the Arabic tatweel (a letter in Unicode)
+    .replace(/[\u0622\u0623\u0625\u0671]/g, '\u0627') // alef forms
+    .replace(/\u0629/g, '\u0647') // ta marbuta as ha
+    .replace(/\u0649/g, '\u064a') // alef maqsura as ya
+    .toUpperCase();
 }
 
 function validateClueWord(state: GameState, raw: string): string {
