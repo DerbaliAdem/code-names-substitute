@@ -1,14 +1,14 @@
-// Home = your agent card + start a game + join by code, all on one page.
+// Home = "agent dossier": your agent file card, one big start button, room code in 5 letter boxes.
 import React, { useEffect, useRef, useState } from 'react';
-import { Image, Pressable, Text, View } from 'react-native';
-import { Avatar, Btn, Burst, Cap, Field, Note, Panel } from '../components/ui';
+import { Pressable, Text, TextInput, View } from 'react-native';
+import { Btn, Cap, Inked, Note, Panel } from '../components/ui';
 import { enterRoom, request } from '../net';
 import { getState, go, setProfile, setState, useApp } from '../store';
-import { ALIASES, BADGES, COLORS, FONT, useTheme } from '../theme';
+import { ALIASES, BADGES, COLORS, FONT, INK, useTheme } from '../theme';
 
 const clean = (s: string) => s.toUpperCase().replace(/[^A-Z]/g, '').slice(0, 5);
 
-function AgentCard() {
+function Dossier() {
   const { profile: p } = useApp();
   const { c } = useTheme();
   const first = useRef(true);
@@ -19,32 +19,67 @@ function AgentCard() {
     timer.current = setTimeout(() => { if (getState().view) request('profile:update', { profile: getState().profile }); }, 400);
   }, [p]);
   const name = p.name.trim() || 'Agent';
-  const sw = (on: boolean) => ({ width: 36, height: 36, borderWidth: on ? 4 : 3, borderColor: on ? c.hl : c.ink, alignItems: 'center' as const, justifyContent: 'center' as const });
+  const sw = (on: boolean) => ({ width: 32, height: 32, borderWidth: on ? 4 : 3, borderColor: on ? c.hl : c.ink, alignItems: 'center' as const, justifyContent: 'center' as const });
+
   return (
-    <Panel>
-      <Cap>Your agent</Cap>
-      <View style={{ flexDirection: 'row', alignItems: 'center', gap: 14 }}>
-        <Avatar name={name} color={p.color} badge={p.badge} />
-        <View style={{ flex: 1, gap: 4 }}>
-          <Field value={p.name} onChangeText={(t) => setProfile({ name: t })} maxLength={14} placeholder="Agent name" autoCorrect={false} accessibilityLabel="Agent name" />
-          <Pressable accessibilityRole="button" accessibilityLabel={'Alias ' + p.alias + ', tap to change'} onPress={() => setProfile({ alias: ALIASES[(ALIASES.indexOf(p.alias) + 1) % ALIASES.length] })}>
-            <Cap>{p.alias} ↻</Cap>
-          </Pressable>
+    <View style={{ marginTop: 22 }}>
+      <View style={{ position: 'absolute', top: -24, left: 0, backgroundColor: c.tan, borderWidth: 3, borderBottomWidth: 0, borderColor: c.ink, paddingHorizontal: 14, paddingVertical: 2 }}>
+        <Text style={{ fontFamily: FONT.bold, fontSize: 13, letterSpacing: 2, color: c.tan === '#d9c79a' ? INK : c.ink }}>TOP SECRET · AGENT FILE</Text>
+      </View>
+      <Panel>
+        <View style={{ flexDirection: 'row', gap: 16, alignItems: 'center' }}>
+          <Inked offset={3} rotate="-3deg" style={{ width: 84, height: 96, backgroundColor: p.color, borderWidth: 3, borderColor: INK, alignItems: 'center', justifyContent: 'center' }}>
+            <Text style={{ fontFamily: FONT.display, fontSize: 52, color: '#fff' }}>{name[0].toUpperCase()}</Text>
+            <View style={{ position: 'absolute', right: -10, bottom: -10, width: 28, height: 28, backgroundColor: '#ffd23c', borderWidth: 2, borderColor: INK, alignItems: 'center', justifyContent: 'center' }}>
+              <Text style={{ fontSize: 15, color: INK }}>{p.badge}</Text>
+            </View>
+          </Inked>
+          <View style={{ flex: 1, gap: 4 }}>
+            <Cap>Code name</Cap>
+            <TextInput value={p.name} onChangeText={(t) => setProfile({ name: t })} maxLength={14} placeholder="AGENT" placeholderTextColor={c.ink + '66'} autoCorrect={false} accessibilityLabel="Code name"
+              style={{ fontFamily: FONT.display, fontSize: 30, letterSpacing: 1, color: c.ink, borderBottomWidth: 3, borderStyle: 'dashed', borderBottomColor: c.ink, paddingVertical: 0, textTransform: 'uppercase' }} />
+            <Pressable accessibilityRole="button" accessibilityLabel={`Alias ${p.alias}, tap to change`} onPress={() => setProfile({ alias: ALIASES[(ALIASES.indexOf(p.alias) + 1) % ALIASES.length] })}>
+              <Text style={{ fontFamily: FONT.bold, fontSize: 15, letterSpacing: 1, color: c.ink }}>ALIAS: {p.alias.toUpperCase()} ↻</Text>
+            </Pressable>
+          </View>
         </View>
+        <View accessibilityRole="radiogroup" style={{ flexDirection: 'row', flexWrap: 'wrap', gap: 8 }}>
+          {COLORS.map((col) => (
+            <Pressable key={col} accessibilityRole="radio" accessibilityLabel={'Colour ' + col} accessibilityState={{ checked: p.color === col }} onPress={() => setProfile({ color: col })} style={[sw(p.color === col), { backgroundColor: col }]} />
+          ))}
+        </View>
+        <View accessibilityRole="radiogroup" style={{ flexDirection: 'row', flexWrap: 'wrap', gap: 6 }}>
+          {BADGES.map((b) => (
+            <Pressable key={b} accessibilityRole="radio" accessibilityLabel={'Badge ' + b} accessibilityState={{ checked: p.badge === b }} onPress={() => setProfile({ badge: b })} style={[sw(p.badge === b), { backgroundColor: c.panel }]}>
+              <Text style={{ fontSize: 15, color: c.ink }}>{b}</Text>
+            </Pressable>
+          ))}
+        </View>
+      </Panel>
+    </View>
+  );
+}
+
+/** Five letter boxes over one invisible input, so typing, pasting and the phone keyboard all just work. */
+function CodeBoxes({ value, onChange, onSubmit }: { value: string; onChange: (v: string) => void; onSubmit: () => void }) {
+  const { c } = useTheme();
+  const [focus, setFocus] = useState(false);
+  return (
+    <View>
+      <View style={{ flexDirection: 'row', gap: 8 }}>
+        {[0, 1, 2, 3, 4].map((i) => {
+          const active = focus && i === Math.min(value.length, 4);
+          return (
+            <View key={i} style={{ flex: 1, height: 56, borderWidth: 3, borderColor: active ? c.red : INK, backgroundColor: active ? '#ffd23c' : '#fff', alignItems: 'center', justifyContent: 'center' }}>
+              <Text style={{ fontFamily: FONT.display, fontSize: 34, color: INK }}>{value[i] ?? ''}</Text>
+            </View>
+          );
+        })}
       </View>
-      <View accessibilityRole="radiogroup" style={{ flexDirection: 'row', flexWrap: 'wrap', gap: 8 }}>
-        {COLORS.map((col) => (
-          <Pressable key={col} accessibilityRole="radio" accessibilityLabel={'Colour ' + col} accessibilityState={{ checked: p.color === col }} onPress={() => setProfile({ color: col })} style={[sw(p.color === col), { backgroundColor: col }]} />
-        ))}
-      </View>
-      <View accessibilityRole="radiogroup" style={{ flexDirection: 'row', flexWrap: 'wrap', gap: 8 }}>
-        {BADGES.map((b) => (
-          <Pressable key={b} accessibilityRole="radio" accessibilityLabel={'Badge ' + b} accessibilityState={{ checked: p.badge === b }} onPress={() => setProfile({ badge: b })} style={[sw(p.badge === b), { backgroundColor: c.panel }]}>
-            <Text style={{ fontSize: 16, color: c.ink }}>{b}</Text>
-          </Pressable>
-        ))}
-      </View>
-    </Panel>
+      <TextInput value={value} onChangeText={(t) => onChange(clean(t))} onFocus={() => setFocus(true)} onBlur={() => setFocus(false)} onSubmitEditing={onSubmit}
+        maxLength={5} autoCapitalize="characters" autoCorrect={false} accessibilityLabel="Room code, 5 letters" caretHidden
+        style={{ position: 'absolute', left: 0, right: 0, top: 0, bottom: 0, opacity: 0.01, color: 'transparent', fontSize: 1 }} />
+    </View>
   );
 }
 
@@ -65,15 +100,14 @@ export default function Home() {
     go('lobby');
   }
   function join() {
-    const k = clean(code);
-    if (k.length !== 5) return say('Room codes have 5 letters.');
-    run('room:join', { code: k, token: session?.code === k ? session.token : undefined });
+    if (code.length !== 5) return say('Room codes have 5 letters.');
+    run('room:join', { code, token: session?.code === code ? session.token : undefined });
   }
 
   return (
-    <View style={{ gap: 18 }}>
-      <Image source={require('../../assets/logo.png')} accessible={false} style={{ width: 110, height: 110, alignSelf: 'center', marginBottom: -30, zIndex: 1, transform: [{ rotate: '8deg' }] }} />
-      <Burst title="CODENAMES!" sub="Two teams. One key. Zero room for error." />
+    <View style={{ gap: 20, maxWidth: 480, width: '100%', alignSelf: 'center' }}>
+      <Text accessibilityRole="header" style={{ fontFamily: FONT.display, fontSize: 44, letterSpacing: 1, color: c.ink, textShadowColor: c.red, textShadowOffset: { width: 3, height: 3 }, textShadowRadius: 0, marginTop: -6 }}>CODENAMES!</Text>
+
       {view && (
         <Panel>
           <Cap>You are in room</Cap>
@@ -83,18 +117,26 @@ export default function Home() {
           </View>
         </Panel>
       )}
-      <View style={{ gap: 14, maxWidth: 480, width: '100%', alignSelf: 'center' }}>
-        <AgentCard />
-        <Btn label="Start a game" onPress={() => run('room:create', {})} disabled={busy} />
-        <Panel>
-          <Cap>Join with a room code</Cap>
-          <View style={{ flexDirection: 'row', gap: 8, alignItems: 'center' }}>
-            <Field value={code} onChangeText={(t) => setCode(clean(t))} placeholder="KAPOW" autoCapitalize="characters" autoCorrect={false} maxLength={5} accessibilityLabel="Room code" onSubmitEditing={join} style={{ flex: 1, letterSpacing: 4 }} />
-            <Btn small label="Join" onPress={join} disabled={busy} />
+
+      <Dossier />
+
+      <Pressable accessibilityRole="button" disabled={busy} onPress={() => run('room:create', {})} style={{ transform: [{ rotate: '-1.5deg' }], opacity: busy ? 0.6 : 1 }}>
+        {({ pressed }) => (
+          <View style={{ marginRight: 6, marginBottom: 6 }}>
+            {!pressed && <View style={{ position: 'absolute', left: 6, top: 6, right: -6, bottom: -6, backgroundColor: c.ink }} />}
+            <View style={{ backgroundColor: c.red, borderWidth: 4, borderColor: INK, paddingVertical: 14, alignItems: 'center', transform: pressed ? [{ translateX: 6 }, { translateY: 6 }] : undefined }}>
+              <Text style={{ fontFamily: FONT.display, fontSize: 34, letterSpacing: 2, color: '#fff', textShadowColor: INK, textShadowOffset: { width: 2, height: 2 }, textShadowRadius: 0 }}>START A MISSION</Text>
+            </View>
           </View>
-        </Panel>
-        <Note text={homeNote} />
-      </View>
+        )}
+      </Pressable>
+
+      <Panel>
+        <Cap>Got a room code?</Cap>
+        <CodeBoxes value={code} onChange={setCode} onSubmit={join} />
+        <Btn label="Join the room" onPress={join} disabled={busy || code.length !== 5} />
+      </Panel>
+      <Note text={homeNote} />
     </View>
   );
 }

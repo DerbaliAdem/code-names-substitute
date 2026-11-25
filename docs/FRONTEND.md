@@ -55,7 +55,9 @@ frontend/
     ├── fx.ts               detects big moments from room:state (clue, wrong-team card, assassin) and fires effects
     ├── components/FxLayer.tsx      full-screen effects: giant clue bubble, HA HA HA laugh, BOOM assassin + screen shake
     ├── components/VictoryReport.tsx end-of-game report shown at the top of the Board
-    └── screens/            Home (agent card + start + join), Lobby (seats + timer), Board (game + victory)
+    └── screens/            Home ("agent dossier": file card, START A MISSION, code in 5 letter boxes),
+                            Lobby ("showdown table": room ticket, red vs blue halves around a round table, timer slider 0–10 min),
+                            Board (game + victory)
 ```
 
 ## Behaviour rules

@@ -1,50 +1,151 @@
+// Lobby = "showdown table": room ticket, red half vs blue half around a round table, timer slider, begin bar.
 import * as Clipboard from 'expo-clipboard';
 import React, { useState } from 'react';
-import { Platform, Share, Text, View } from 'react-native';
-import { Avatar, Body, Btn, Burst, Cap, Field, H3, Note, Panel, Row, Tag } from '../components/ui';
+import { Platform, Pressable, Share, Text, View, type GestureResponderEvent, type ViewStyle } from 'react-native';
+import { Avatar, Body, Btn, Burst, Cap, H3, Note, Panel } from '../components/ui';
 import { leaveRoom, request } from '../net';
 import { TEAM, type Player, type Role, type RoomView, type Team } from '../protocol';
 import { go, me, useApp } from '../store';
 import { FONT, INK, useTheme } from '../theme';
 
-/** Same checks the server does for NOT_READY, to explain a disabled Start button. */
+/** Same checks the server does for NOT_READY, to explain a disabled Begin button. */
 export function notReady(v: RoomView): string {
   for (const k of ['r', 'b'] as Team[]) {
     const mem = v.players.filter((p) => p.team === k);
-    if (!mem.some((p) => p.role === 'spymaster')) return `${TEAM[k].n} needs a spymaster.`;
-    if (!mem.some((p) => p.role === 'agent')) return `${TEAM[k].n} needs at least one agent.`;
+    if (!mem.some((p) => p.role === 'spymaster')) return `${TEAM[k].n} needs a spymaster`;
+    if (!mem.some((p) => p.role === 'agent')) return `${TEAM[k].n} needs an agent`;
   }
   return '';
 }
 
-export function PlayerRow({ p, you }: { p: Player; you: boolean }) {
-  const { c } = useTheme();
+const ARENA_H = 480;
+const MAX_TIMER = 600;
+const fmt = (s: number) => (s ? `${Math.floor(s / 60)}:${String(s % 60).padStart(2, '0')}` : 'OFF');
+
+/** Seat spots inside one half (red uses top, blue mirrors to bottom). */
+const AGENT_SPOTS: ViewStyle[] = [{ left: 12, top: 92 }, { right: 12, top: 92 }, { left: 12, top: 166 }, { right: 12, top: 166 }];
+
+function Seat({ p, you, spy }: { p: Player; you: boolean; spy?: boolean }) {
   return (
-    <Row you={you} left={<>
-      <Avatar small name={p.name} color={p.color} badge={p.badge} />
-      <Text style={{ fontFamily: FONT.bold, fontSize: 17, color: you ? INK : c.ink, opacity: p.connected ? 1 : 0.55, flexShrink: 1 }}>
-        {p.name}{you ? ' (you)' : ''}{p.connected ? '' : ' · away'}
+    <View style={{ alignItems: 'center', gap: 2, width: 72 }}>
+      <View style={you ? { borderWidth: 3, borderColor: '#ffd23c', padding: 1 } : undefined}>
+        <Avatar small={!spy} name={p.name} color={p.color} badge={p.badge} />
+      </View>
+      {spy && <Text style={{ position: 'absolute', top: -10, right: 0, fontFamily: FONT.display, fontSize: 11, backgroundColor: INK, color: '#ffd23c', paddingHorizontal: 4 }}>SPY</Text>}
+      <Text numberOfLines={1} style={{ fontFamily: FONT.display, fontSize: 15, color: you ? '#ffd23c' : '#fff', opacity: p.connected ? 1 : 0.6 }}>
+        {you ? 'YOU' : p.name.toUpperCase()}{p.isHost ? ' ★' : ''}
       </Text>
-      {p.isHost ? <Text style={{ fontFamily: FONT.display, fontSize: 12, backgroundColor: '#ffd23c', color: INK, paddingHorizontal: 5, borderWidth: 2, borderColor: INK }}>HOST</Text> : null}
-    </>} right={<Tag>{p.role ? p.role.toUpperCase() : 'WAITING'}</Tag>} />
+    </View>
   );
 }
 
-const TIMERS = [0, 30, 60, 90, 120];
-const fmt = (s: number) => (s ? (s % 60 ? `${Math.floor(s / 60) ? Math.floor(s / 60) + 'm ' : ''}${s % 60}s` : `${s / 60} min`) : 'Off');
+function OpenSeat({ label, onPress, big }: { label: string; onPress?: () => void; big?: boolean }) {
+  return (
+    <Pressable accessibilityRole="button" accessibilityLabel={label} onPress={onPress} disabled={!onPress} style={{ alignItems: 'center', gap: 2, width: 72, opacity: onPress ? 1 : 0.5 }}>
+      <View style={{ width: big ? 56 : 44, height: big ? 56 : 44, borderWidth: 3, borderStyle: 'dashed', borderColor: big ? INK : '#fff9e0', backgroundColor: big ? '#ffd23c' : 'transparent', alignItems: 'center', justifyContent: 'center' }}>
+        <Text style={{ fontFamily: FONT.display, fontSize: big ? 13 : 24, lineHeight: big ? 14 : 26, color: big ? INK : '#fff9e0', textAlign: 'center' }}>{big ? 'TAKE\nSPY' : '+'}</Text>
+      </View>
+      <Text style={{ fontFamily: FONT.display, fontSize: 13, color: '#fff9e0' }}>{big ? 'SPYMASTER' : 'AGENT'}</Text>
+    </Pressable>
+  );
+}
+
+function Half({ v, k, onSeat }: { v: RoomView; k: Team; onSeat: (team: Team, role: Role) => void }) {
+  const { c } = useTheme();
+  const red = k === 'r';
+  const lobby = v.phase === 'lobby';
+  const you = me(v);
+  const mine = you?.team === k;
+  const mem = v.players.filter((p) => p.team === k);
+  const spy = mem.find((p) => p.role === 'spymaster');
+  const agents = mem.filter((p) => p.role === 'agent');
+  const flip = (s: ViewStyle): ViewStyle => (red ? s : { ...s, top: undefined, bottom: s.top as number });
+  const canJoinAgent = lobby && !(mine && you?.role === 'agent');
+  const extra = agents.length - AGENT_SPOTS.length;
+  return (
+    <View style={{ flex: 1, backgroundColor: red ? c.red : c.blue }}>
+      <Text style={{ position: 'absolute', [red ? 'top' : 'bottom']: 10, [red ? 'left' : 'right']: 12, fontFamily: FONT.display, fontSize: 28, color: '#fff', textShadowColor: INK, textShadowOffset: { width: 3, height: 3 }, textShadowRadius: 0 } as never}>
+        {red ? `${TEAM.r.g} RED · ${mem.length}` : `BLUE · ${mem.length} ${TEAM.b.g}`}
+      </Text>
+      {/* spymaster at the head of the table */}
+      <View style={[{ position: 'absolute', left: 0, right: 0, alignItems: 'center' }, red ? { top: 14 } : { bottom: 14 }]}>
+        {spy ? <Seat p={spy} you={spy.id === v.you} spy />
+          : <OpenSeat big label={`Take the ${TEAM[k].n} spymaster seat`} onPress={lobby ? () => onSeat(k, 'spymaster') : undefined} />}
+      </View>
+      {AGENT_SPOTS.map((spot, i) => {
+        const p = agents[i];
+        const showJoin = !p && i === agents.length && canJoinAgent;
+        if (!p && !showJoin) return null;
+        return (
+          <View key={i} style={[{ position: 'absolute' }, flip(spot)]}>
+            {p ? <Seat p={p} you={p.id === v.you} /> : <OpenSeat label={`Join ${TEAM[k].n} as agent`} onPress={() => onSeat(k, 'agent')} />}
+          </View>
+        );
+      })}
+      {extra > 0 && <Text style={[{ position: 'absolute', fontFamily: FONT.display, fontSize: 15, color: '#fff' }, red ? { top: 236, left: 12 } : { bottom: 236, right: 12 }]}>+{extra} MORE</Text>}
+    </View>
+  );
+}
+
+/** 8-point comic burst with a label, built from two rotated squares. */
+function VsBurst() {
+  const sq = (rot: string) => ({ position: 'absolute' as const, width: 66, height: 66, backgroundColor: '#ffd23c', borderWidth: 4, borderColor: INK, transform: [{ rotate: rot }] });
+  return (
+    <View style={{ width: 96, height: 96, alignItems: 'center', justifyContent: 'center', transform: [{ rotate: '-8deg' }] }}>
+      <View style={sq('0deg')} /><View style={sq('45deg')} />
+      <View style={{ position: 'absolute', width: 60, height: 60, backgroundColor: '#ffd23c' }} />
+      <Text style={{ fontFamily: FONT.display, fontSize: 32, color: INK }}>VS</Text>
+    </View>
+  );
+}
+
+function TimerSlider({ value, enabled, onChange }: { value: number; enabled: boolean; onChange: (s: number) => void }) {
+  const { c } = useTheme();
+  const [w, setW] = useState(1);
+  const [drag, setDrag] = useState<number | null>(null);
+  const shown = drag ?? value;
+  const f = Math.min(1, shown / MAX_TIMER);
+  const toSec = (e: GestureResponderEvent) => {
+    const x = Math.max(0, Math.min(w, e.nativeEvent.locationX));
+    const s = Math.round(((x / w) * MAX_TIMER) / 15) * 15;
+    return s > 0 && s < 15 ? 15 : s;
+  };
+  const step = (d: number) => { const s = Math.max(0, Math.min(MAX_TIMER, value + d)); onChange(s > 0 && s < 15 ? (d > 0 ? 15 : 0) : s); };
+  return (
+    <View style={{ gap: 6 }}>
+      <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' }}>
+        <Cap style={{ color: INK }}>Turn timer{enabled ? '' : ' · host only'}</Cap>
+        <Text style={{ fontFamily: FONT.display, fontSize: 24, color: INK }}>{fmt(shown)}</Text>
+      </View>
+      <View style={{ flexDirection: 'row', alignItems: 'center', gap: 10 }}>
+        <Pressable accessibilityRole="button" accessibilityLabel="Less time" disabled={!enabled} onPress={() => step(-15)} style={{ width: 36, height: 36, borderWidth: 3, borderColor: INK, backgroundColor: '#fff9e0', alignItems: 'center', justifyContent: 'center', opacity: enabled ? 1 : 0.4 }}>
+          <Text style={{ fontFamily: FONT.display, fontSize: 22, color: INK }}>−</Text>
+        </Pressable>
+        <View onLayout={(e) => setW(e.nativeEvent.layout.width || 1)} style={{ flex: 1, height: 36, justifyContent: 'center' }}
+          accessible accessibilityRole="adjustable" accessibilityLabel="Turn timer" accessibilityValue={{ text: fmt(value) }}
+          onAccessibilityAction={(e) => step(e.nativeEvent.actionName === 'increment' ? 15 : -15)}
+          accessibilityActions={[{ name: 'increment' }, { name: 'decrement' }]}
+          onStartShouldSetResponder={() => enabled} onMoveShouldSetResponder={() => enabled}
+          onResponderGrant={(e) => setDrag(toSec(e))} onResponderMove={(e) => setDrag(toSec(e))}
+          onResponderRelease={(e) => { const s = toSec(e); setDrag(null); if (s !== value) onChange(s); }}>
+          <View pointerEvents="none" style={{ height: 14, borderWidth: 3, borderColor: INK, backgroundColor: '#fff9e0' }}>
+            <View style={{ position: 'absolute', left: 0, top: 0, bottom: 0, width: `${f * 100}%`, backgroundColor: c.red }} />
+          </View>
+          <View pointerEvents="none" style={{ position: 'absolute', left: `${f * 100}%`, marginLeft: -13, width: 26, height: 26, borderRadius: 13, backgroundColor: '#ffd23c', borderWidth: 3, borderColor: INK, opacity: enabled ? 1 : 0.6 }} />
+        </View>
+        <Pressable accessibilityRole="button" accessibilityLabel="More time" disabled={!enabled} onPress={() => step(15)} style={{ width: 36, height: 36, borderWidth: 3, borderColor: INK, backgroundColor: '#fff9e0', alignItems: 'center', justifyContent: 'center', opacity: enabled ? 1 : 0.4 }}>
+          <Text style={{ fontFamily: FONT.display, fontSize: 22, color: INK }}>+</Text>
+        </Pressable>
+      </View>
+    </View>
+  );
+}
 
 export default function Lobby() {
   const { view: v } = useApp();
   const { c } = useTheme();
   const [msg, setMsg] = useState('');
   const flash = (res: { ok: boolean; error?: { message: string } }) => setMsg(res.ok ? '' : res.error!.message);
-  const [custom, setCustom] = useState('');
-  const setTimer = async (timer: number) => flash(await request('settings:update', { settings: { timer } }));
-  function applyCustom() {
-    const n = parseInt(custom, 10);
-    if (!n || n < 15 || n > 600) { setMsg('Pick a time between 15 and 600 seconds.'); return; }
-    setCustom(''); setTimer(n);
-  }
 
   if (!v) {
     return (
@@ -56,6 +157,7 @@ export default function Lobby() {
   }
 
   const lobby = v.phase === 'lobby', you = me(v), host = !!you?.isHost, why = lobby ? notReady(v) : '';
+  const unseated = v.players.filter((p) => !p.team);
 
   async function invite() {
     if (!v) return;
@@ -66,73 +168,78 @@ export default function Lobby() {
       Share.share({ message: `Join my Codenames room: ${v.code}` }).catch(() => {});
     }
   }
-
   const seat = async (team: Team, role: Role) => flash(await request('seat:take', { team, role }));
+  const ticketBtn = (label: string, onPress: () => void) => (
+    <Pressable accessibilityRole="button" onPress={onPress} style={{ backgroundColor: '#fff9e0', borderWidth: 2, borderColor: INK, paddingHorizontal: 8, paddingVertical: 2 }}>
+      <Text style={{ fontFamily: FONT.display, fontSize: 16, color: INK }}>{label}</Text>
+    </Pressable>
+  );
+
+  let beginLabel = 'BEGIN THE MISSION', beginOn = true;
+  if (!lobby) beginLabel = 'BACK TO THE GAME';
+  else if (why) { beginLabel = why.toUpperCase(); beginOn = false; }
+  else if (!host) { beginLabel = 'WAITING FOR THE HOST'; beginOn = false; }
 
   return (
     <View style={{ gap: 16 }}>
-      <Burst title="THE HIDEOUT" sub={lobby ? 'Waiting for agents' : 'Mission in progress'} />
-      <Panel>
-        <Cap>Room code · tell your friends</Cap>
-        <View style={{ borderWidth: 3, borderStyle: 'dashed', borderColor: c.ink, padding: 4 }}>
-          <Text selectable style={{ fontFamily: FONT.display, fontSize: 48, letterSpacing: 10, textAlign: 'center', color: c.ink }}>{v.code}</Text>
+      {/* room ticket */}
+      <View style={{ transform: [{ rotate: '-1.5deg' }], marginRight: 6, marginBottom: 6 }}>
+        <View style={{ position: 'absolute', left: 6, top: 6, right: -6, bottom: -6, backgroundColor: c.red }} />
+        <View style={{ backgroundColor: '#ffd23c', borderWidth: 4, borderColor: INK, paddingVertical: 8, paddingHorizontal: 12, flexDirection: 'row', alignItems: 'center', gap: 12 }}>
+          <View style={{ flex: 1 }}>
+            <Text style={{ fontFamily: FONT.bold, fontSize: 11, letterSpacing: 2, color: INK }}>ADMIT YOUR FRIENDS · ROOM</Text>
+            <Text selectable style={{ fontFamily: FONT.display, fontSize: 42, letterSpacing: 10, lineHeight: 46, color: INK }}>{v.code}</Text>
+          </View>
+          <View style={{ borderLeftWidth: 3, borderStyle: 'dashed', borderLeftColor: INK, paddingLeft: 10, gap: 6 }}>
+            {ticketBtn(Platform.OS === 'web' ? 'INVITE' : 'SHARE', invite)}
+            {ticketBtn('LEAVE', leaveRoom)}
+          </View>
         </View>
-        <View style={{ flexDirection: 'row', gap: 8, flexWrap: 'wrap' }}>
-          <Btn small variant="alt" label={Platform.OS === 'web' ? 'Copy invite link' : 'Share code'} onPress={invite} />
-          <Btn small variant="alt" label="Leave room" onPress={leaveRoom} />
-        </View>
-      </Panel>
-      <Note text={msg || (lobby ? why || (you?.team ? '' : 'Pick a team and a role first.') : '')} />
-
-      <View style={{ flexDirection: 'row', flexWrap: 'wrap', gap: 16 }}>
-        {(['r', 'b'] as Team[]).map((k) => {
-          const mem = v.players.filter((p) => p.team === k).sort((a, b) => (a.role === 'spymaster' ? 0 : 1) - (b.role === 'spymaster' ? 0 : 1));
-          const taken = mem.some((p) => p.role === 'spymaster' && p.id !== v.you);
-          return (
-            <View key={k} style={{ flexGrow: 1, flexBasis: 240 }}>
-              <Panel top={k === 'r' ? c.red : c.blue}>
-                <H3>{TEAM[k].g} {TEAM[k].n} team</H3>
-                {mem.length ? mem.map((p) => <PlayerRow key={p.id} p={p} you={p.id === v.you} />) : <Cap>Empty</Cap>}
-                {lobby && (you?.team === k
-                  ? <Btn variant="alt" label="Leave team" onPress={async () => flash(await request('seat:leave'))} />
-                  : <>
-                    <Btn variant={k} label={taken ? 'Spymaster seat taken' : 'Join as spymaster'} disabled={taken} onPress={() => seat(k, 'spymaster')} />
-                    <Btn variant="alt" label="Join as agent" onPress={() => seat(k, 'agent')} />
-                  </>)}
-              </Panel>
-            </View>
-          );
-        })}
       </View>
 
-      {v.players.some((p) => !p.team) && (
+      {/* the showdown table */}
+      <View style={{ height: ARENA_H, borderWidth: 4, borderColor: INK, overflow: 'hidden' }}>
+        <Half v={v} k="r" onSeat={seat} />
+        <Half v={v} k="b" onSeat={seat} />
+        <View pointerEvents="none" style={{ position: 'absolute', left: 0, right: 0, top: 0, bottom: 0, alignItems: 'center', justifyContent: 'center' }}>
+          <View style={{ width: 170, height: 170, borderRadius: 85, borderWidth: 5, borderColor: INK, backgroundColor: '#2b2823', overflow: 'hidden' }}>
+            <View style={{ flex: 1, backgroundColor: c.red, opacity: 0.35 }} />
+            <View style={{ flex: 1, backgroundColor: c.blue, opacity: 0.35 }} />
+          </View>
+        </View>
+        <View pointerEvents="none" style={{ position: 'absolute', left: 0, right: 0, top: 0, bottom: 0, alignItems: 'center', justifyContent: 'center' }}>
+          <VsBurst />
+        </View>
+      </View>
+
+      {lobby && you?.team && (
+        <Btn small variant="alt" label={`Leave ${TEAM[you.team].n} team`} onPress={async () => flash(await request('seat:leave'))} />
+      )}
+
+      {unseated.length > 0 && (
         <Panel>
           <Cap>In the room, no team yet</Cap>
-          {v.players.filter((p) => !p.team).map((p) => <PlayerRow key={p.id} p={p} you={p.id === v.you} />)}
+          <View style={{ flexDirection: 'row', flexWrap: 'wrap', gap: 12 }}>
+            {unseated.map((p) => (
+              <View key={p.id} style={{ alignItems: 'center', gap: 2 }}>
+                <Avatar small name={p.name} color={p.color} badge={p.badge} />
+                <Text style={{ fontFamily: FONT.display, fontSize: 14, color: c.ink }}>{p.id === v.you ? 'YOU' : p.name.toUpperCase()}</Text>
+              </View>
+            ))}
+          </View>
         </Panel>
       )}
 
-      <Panel>
-        <Cap>Game settings{host ? '' : ' · host only'}</Cap>
-        <Body style={{ fontFamily: FONT.bold }}>Turn timer · {fmt(v.settings.timer)}</Body>
-        <View style={{ flexDirection: 'row', gap: 8, flexWrap: 'wrap' }}>
-          {TIMERS.map((t) => (
-            <Btn key={t} small variant={v.settings.timer === t ? 'hl' : 'alt'} label={fmt(t)} disabled={!lobby || !host} onPress={() => setTimer(t)} />
-          ))}
-        </View>
-        {lobby && host && (
-          <View style={{ flexDirection: 'row', gap: 8, alignItems: 'center', flexWrap: 'wrap' }}>
-            <Field value={custom} onChangeText={(t) => setCustom(t.replace(/[^0-9]/g, '').slice(0, 3))} placeholder="Seconds" keyboardType="number-pad" maxLength={3}
-              accessibilityLabel="Custom turn timer in seconds" onSubmitEditing={applyCustom} style={{ width: 120 }} />
-            <Btn small label="Set my time" onPress={applyCustom} />
-            <Cap>15 to 600 seconds</Cap>
-          </View>
-        )}
-      </Panel>
-
-      {lobby
-        ? <Btn label={host ? 'Begin the mission' : 'Waiting for the host to begin'} disabled={!host || !!why} onPress={async () => flash(await request('game:start'))} />
-        : <Btn label="Back to the board" onPress={() => go('board')} />}
+      {/* bottom bar: timer + begin */}
+      <View style={{ backgroundColor: '#f6e7a8', borderWidth: 4, borderColor: INK, padding: 12, gap: 10 }}>
+        <TimerSlider value={v.settings.timer} enabled={lobby && host} onChange={async (timer) => flash(await request('settings:update', { settings: { timer } }))} />
+        <Pressable accessibilityRole="button" accessibilityState={{ disabled: !beginOn }} disabled={!beginOn}
+          onPress={async () => { if (!lobby) go('board'); else flash(await request('game:start')); }}
+          style={{ backgroundColor: beginOn ? c.red : '#d9c79a', borderWidth: 3, borderColor: INK, paddingVertical: 8, alignItems: 'center' }}>
+          <Text style={{ fontFamily: FONT.display, fontSize: 24, letterSpacing: 1, color: beginOn ? '#fff' : INK, textShadowColor: beginOn ? INK : 'transparent', textShadowOffset: { width: 2, height: 2 }, textShadowRadius: 0 }}>{beginLabel}</Text>
+        </Pressable>
+      </View>
+      <Note text={msg || (lobby && !you?.team ? 'Tap a + seat to join a team.' : '')} />
     </View>
   );
 }

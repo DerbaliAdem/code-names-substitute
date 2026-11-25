@@ -19,6 +19,7 @@ Each agent edits **only its own section**, at the end of every working session. 
 - Animations: card flip + BAM!/OOPS!/MEH/BOOM! pop on reveal, speech-bubble pop when a clue is sent, reduced-motion aware.
 - Screens merged to Home / Lobby / Board, with no page tabs (victory report lives on the Board, rules page removed).
 - Full-screen effects: giant clue bubble, HA HA HA on wrong-team card, BOOM + screen shake on the assassin.
+- Home redesigned as the "agent dossier" and Lobby as the "showdown table" (red vs blue around a round table, timer slider).
 - Custom turn timer: presets plus any value from 15 to 600 s (protocol 1.2).
 - GitHub Pages workflow now builds the Expo web export. `eas.json` is ready for free Android APK builds.
 
