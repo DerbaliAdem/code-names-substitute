@@ -1,12 +1,15 @@
 // Root: fonts, persisted prefs, connection, banner, screen switch, phase routing, full-screen effects.
-import { Bangers_400Regular } from '@expo-google-fonts/bangers';
-import { BarlowCondensed_600SemiBold, BarlowCondensed_800ExtraBold } from '@expo-google-fonts/barlow-condensed';
+import { Bangers_400Regular } from '@expo-google-fonts/bangers/400Regular';
+// Import each weight on its own: the package index would bundle all 18 font files.
+import { BarlowCondensed_600SemiBold } from '@expo-google-fonts/barlow-condensed/600SemiBold';
+import { BarlowCondensed_800ExtraBold } from '@expo-google-fonts/barlow-condensed/800ExtraBold';
 import { useFonts } from 'expo-font';
 import { StatusBar } from 'expo-status-bar';
 import React, { useEffect, useRef } from 'react';
 import { Animated, Linking, Pressable, ScrollView, View, type ScrollViewInstance } from 'react-native';
 import { SafeAreaProvider, SafeAreaView } from 'react-native-safe-area-context';
 import FxLayer from './src/components/FxLayer';
+import UpdatePrompt from './src/components/UpdatePrompt';
 import { detectFx, fire, screenShake } from './src/fx';
 import { connect } from './src/net';
 import type { RoomView } from './src/protocol';
@@ -88,6 +91,7 @@ function Main() {
         </ScrollView>
       </Animated.View>
       <FxLayer />
+      {ready && <UpdatePrompt />}
     </SafeAreaView>
   );
 }

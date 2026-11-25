@@ -35,17 +35,23 @@ jobs:
       - run: npm ci
       - run: npx tsc --noEmit
       - run: npx expo prebuild -p android --no-install
+      # One small APK per processor type instead of one big one with every type inside.
       - name: Build
         working-directory: frontend/android
-        run: ./gradlew app:assembleRelease -PreactNativeArchitectures=arm64-v8a,armeabi-v7a,x86_64 --no-daemon
+        run: |
+          mkdir -p ../out
+          for abi in arm64-v8a armeabi-v7a; do
+            ./gradlew app:assembleRelease -PreactNativeArchitectures=$abi --no-daemon
+            cp app/build/outputs/apk/release/app-release.apk ../out/codenames-pulp-$abi.apk
+          done
+          ls -l ../out
         env:
           NODE_ENV: production
           EXPO_PUBLIC_SERVER_URL: https://codenames-pulp-api.onrender.com
-      - run: cp android/app/build/outputs/apk/release/app-release.apk codenames-pulp.apk
       - uses: actions/upload-artifact@v4
         with:
           name: codenames-pulp-apk
-          path: frontend/codenames-pulp.apk
+          path: frontend/out/*.apk
           if-no-files-found: error
 
   release:
@@ -58,6 +64,15 @@ jobs:
       - uses: actions/download-artifact@v4
         with:
           name: codenames-pulp-apk
-      - run: gh release create "$GITHUB_REF_NAME" codenames-pulp.apk --repo "$GITHUB_REPOSITORY" --title "$GITHUB_REF_NAME" --generate-notes
+      - run: |
+          cat > notes.md <<'EOF'
+          **Android:** download **codenames-pulp-arm64-v8a.apk** (almost every phone from 2017 on).
+          Only very old phones need **codenames-pulp-armeabi-v7a.apk**. Open the file to install.
+          (`codenames-pulp.apk` is the same as the arm64 file, for older links.)
+          Phones that already have the app are offered the update when they open it.
+          EOF
+          # Same file under the old name, so .../releases/latest/download/codenames-pulp.apk links keep working.
+          cp codenames-pulp-arm64-v8a.apk codenames-pulp.apk
+          gh release create "$GITHUB_REF_NAME" codenames-pulp-*.apk codenames-pulp.apk --repo "$GITHUB_REPOSITORY" --title "$GITHUB_REF_NAME" --notes-file notes.md --generate-notes
         env:
           GH_TOKEN: ${{ github.token }}

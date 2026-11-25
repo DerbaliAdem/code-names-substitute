@@ -53,8 +53,12 @@ there are 750 instance-hours a month, and memory is wiped on restart. Keep **one
 ## Android: free APK from GitHub (no Expo account, about 15 min)
 
 GitHub → **Actions → Android APK → Run workflow**. When it finishes, download `codenames-pulp-apk` from the run.
-Pushing a tag such as `v1.0.0` also publishes the APK as a GitHub Release, with a link any phone can open.
-Raise `version` and `android.versionCode` in `frontend/app.json` for every new APK, or phones won't update.
+
+**New release:** raise `version` and `android.versionCode` in `frontend/app.json`, commit, push, then push a tag with the same
+version (`git tag -a v1.2.0 -m v1.2.0 && git push origin v1.2.0`). GitHub builds `codenames-pulp-arm64-v8a.apk` (about 12 MB, almost
+every phone) and `codenames-pulp-armeabi-v7a.apk` (old phones), and publishes them as a Release. Players who open an older app
+see a "New version" screen (`src/update.ts`) with **Install now** or **Later**. It compares the app's `version` with the latest
+release tag, so the tag must match `app.json`.
 
 The APK is signed with the public Expo debug key: fine for friends, **not** for the Play Store, and Android will refuse to
 update it with a build signed by another key (EAS, Play). Uninstall first when switching.

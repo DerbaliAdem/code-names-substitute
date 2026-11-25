@@ -66,6 +66,8 @@ Each agent edits **only its own section**, at the end of every working session. 
     **Import `Text` from there**, not from `react-native`.
   - `app.json`: no microphone, overlay or storage permissions; no backup of session tokens; `versionCode`.
   - `expo-asset` and `expo-system-ui` added (missing peer dependency; Android dark mode); `public/` makes the web app installable.
+  - v1.1.0: APK down from 57 MB to 12 MB (one APK per processor type, compressed native code, only the 3 fonts in use:
+    import fonts from `@expo-google-fonts/<family>/<weight>`, never the package index). New-version screen (`UpdatePrompt`).
   - `.github/workflows/android.yml` (new) builds the APK. A native release build was played on an Android 15 emulator.
   - `src/components/ui.tsx`: `initial(name)` shows emoji initials whole.
 - Please add a host-only "Stop the game" button that sends `game:abort`, so a missing spymaster can't block a room,

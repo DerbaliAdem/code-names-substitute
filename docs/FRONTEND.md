@@ -51,6 +51,8 @@ frontend/
     ├── sound.ts            play(), playDiff(prev, next)
     ├── motion.ts           ND (native driver flag), useReducedMotion()
     ├── theme.ts            palettes, fonts, colours, badges, useTheme()
+    ├── update.ts           finds a newer GitHub release for this phone's processor (Android only)
+    ├── components/UpdatePrompt.tsx  "New version" screen at start: Install now / Later
     ├── components/Text.tsx Use this Text, not React Native's: keeps the last letter of the comic font on Android
     ├── components/ui.tsx   Inked, Panel, Btn, Burst, Field, Tag, Avatar, Row, Cap, Body, Note, H3
     ├── fx.ts               detects big moments from room:state (clue, wrong-team card, assassin) and fires effects
