@@ -1,5 +1,5 @@
 import React, { useEffect, useRef, useState } from 'react';
-import { Animated, Easing, Pressable, Text, TextInput, View, useWindowDimensions } from 'react-native';
+import { Animated, Easing, Pressable, TextInput, View, useWindowDimensions } from 'react-native';
 import { ND, useReducedMotion } from '../motion';
 import { Body, Btn, Burst, Cap, H3, Note, Panel, Row, Tag } from '../components/ui';
 import { leaveRoom, request } from '../net';
@@ -8,6 +8,7 @@ import { MARK, TEAM, type Card, type RoomView } from '../protocol';
 import { play } from '../sound';
 import { go, me, now, playerName, useApp } from '../store';
 import { FONT, INK, useTheme, type Palette } from '../theme';
+import { Text } from '../components/Text';
 
 /** What the UI lets this player do. The server re-checks everything. */
 export function perms(v: RoomView | null) {

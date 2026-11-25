@@ -51,6 +51,7 @@ frontend/
     ├── sound.ts            play(), playDiff(prev, next)
     ├── motion.ts           ND (native driver flag), useReducedMotion()
     ├── theme.ts            palettes, fonts, colours, badges, useTheme()
+    ├── components/Text.tsx Use this Text, not React Native's: keeps the last letter of the comic font on Android
     ├── components/ui.tsx   Inked, Panel, Btn, Burst, Field, Tag, Avatar, Row, Cap, Body, Note, H3
     ├── fx.ts               detects big moments from room:state (clue, wrong-team card, assassin) and fires effects
     ├── components/FxLayer.tsx      full-screen effects: giant clue bubble, HA HA HA laugh, BOOM assassin + screen shake

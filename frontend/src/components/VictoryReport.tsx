@@ -1,11 +1,12 @@
 // End-of-game report, shown at the top of the board when phase = 'over'.
 import React, { useState } from 'react';
-import { Text, View } from 'react-native';
+import { View } from 'react-native';
 import { request } from '../net';
 import { TEAM, type RoomView } from '../protocol';
 import { me, playerName } from '../store';
 import { FONT, INK, useTheme } from '../theme';
 import { Btn, Burst, Cap, Note, Panel, Row, Tag } from './ui';
+import { Text } from './Text';
 
 export default function VictoryReport({ v }: { v: RoomView }) {
   const { c } = useTheme();

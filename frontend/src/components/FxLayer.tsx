@@ -1,11 +1,12 @@
 // Whole-screen comic effects drawn above everything: giant clue bubble, HA HA HA, BOOM.
 import React, { useEffect, useRef, useState } from 'react';
-import { Animated, Easing, Pressable, Text, View, useWindowDimensions } from 'react-native';
+import { Animated, Easing, Pressable, View, useWindowDimensions } from 'react-native';
 import { onFx, screenShake, type Fx } from '../fx';
 import { ND, useReducedMotion } from '../motion';
 import { TEAM } from '../protocol';
 import { playerName } from '../store';
 import { FONT, INK, useTheme } from '../theme';
+import { TAIL, Text } from './Text';
 
 const JOKER_GREEN = '#3fbf3f', JOKER_PURPLE = '#6a2c91';
 
@@ -108,7 +109,7 @@ function LaughFx({ fx, done }: { fx: Extract<Fx, { kind: 'laugh' }>; done: () =>
                 { scale: has[i].interpolate({ inputRange: [0, 1], outputRange: [0, 1] }) },
                 { rotate: screenWobble.interpolate({ inputRange: [-1, 1], outputRange: i % 2 ? ['10deg', '-6deg'] : ['-10deg', '6deg'] }) },
                 { translateY: screenWobble.interpolate({ inputRange: [-1, 1], outputRange: i % 2 ? [-10, 6] : [6, -10] }) },
-              ] }]}>{w}</Animated.Text>
+              ] }]}>{w}{TAIL}</Animated.Text>
           ))}
         </View>
         <View style={{ marginTop: 18, backgroundColor: '#fff', borderWidth: 4, borderColor: INK, paddingHorizontal: 16, paddingVertical: 6, transform: [{ rotate: '-2deg' }] }}>

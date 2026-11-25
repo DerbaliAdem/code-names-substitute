@@ -1,12 +1,13 @@
 // Lobby = "showdown table": room ticket, red half vs blue half around a round table, timer slider, begin bar.
 import * as Clipboard from 'expo-clipboard';
 import React, { useEffect, useRef, useState } from 'react';
-import { Platform, Pressable, Share, Text, View, type GestureResponderEvent, type ViewStyle } from 'react-native';
+import { Platform, Pressable, Share, View, type GestureResponderEvent, type ViewStyle } from 'react-native';
 import { Avatar, Body, Btn, Burst, Cap, H3, Note, Panel } from '../components/ui';
 import { leaveRoom, request } from '../net';
 import { TEAM, type Player, type Role, type RoomView, type Team } from '../protocol';
 import { go, me, useApp } from '../store';
 import { FONT, INK, useTheme } from '../theme';
+import { Text } from '../components/Text';
 
 /** Same checks the server does for NOT_READY, to explain a disabled Begin button. */
 export function notReady(v: RoomView): string {

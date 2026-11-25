@@ -4,7 +4,7 @@ import { BarlowCondensed_600SemiBold, BarlowCondensed_800ExtraBold } from '@expo
 import { useFonts } from 'expo-font';
 import { StatusBar } from 'expo-status-bar';
 import React, { useEffect, useRef } from 'react';
-import { Animated, Linking, Pressable, ScrollView, Text, View, type ScrollViewInstance } from 'react-native';
+import { Animated, Linking, Pressable, ScrollView, View, type ScrollViewInstance } from 'react-native';
 import { SafeAreaProvider, SafeAreaView } from 'react-native-safe-area-context';
 import FxLayer from './src/components/FxLayer';
 import { detectFx, fire, screenShake } from './src/fx';
@@ -16,6 +16,7 @@ import Lobby from './src/screens/Lobby';
 import { playDiff } from './src/sound';
 import { getState, go, loadPersisted, onViewChange, setSoundOn, setState, setThemePref, setView, useApp, type Screen, type ThemePref } from './src/store';
 import { FONT, useTheme } from './src/theme';
+import { Text } from './src/components/Text';
 
 const SCREENS: Record<Screen, () => React.JSX.Element> = { home: Home, lobby: Lobby, board: Board };
 const BANNER = { connecting: '', online: '', waking: 'Waking the server… the first visit can take up to a minute', reconnecting: 'Connection lost. Reconnecting…' };

@@ -1,8 +1,9 @@
 // Pulp comic building blocks: inked panels with hard offset shadows, buttons, bursts.
 import React from 'react';
-import { Pressable, StyleSheet, Text, TextInput, View, type StyleProp, type TextInputProps, type TextStyle, type ViewStyle } from 'react-native';
+import { Pressable, StyleSheet, TextInput, View, type StyleProp, type TextInputProps, type TextStyle, type ViewStyle } from 'react-native';
 import { FONT, INK, useTheme } from '../theme';
 import { Hero } from './Hero';
+import { Text } from './Text';
 
 /** Hard offset shadow that looks the same on iOS, Android and web. */
 export function Inked({ offset = 5, shadow, style, children, rotate }: { offset?: number; shadow?: string; style?: StyleProp<ViewStyle>; children: React.ReactNode; rotate?: string }) {

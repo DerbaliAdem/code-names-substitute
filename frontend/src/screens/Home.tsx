@@ -1,11 +1,12 @@
 // Home = "agent dossier": your agent file card, one big start button, room code in 5 letter boxes.
 import React, { useEffect, useRef, useState } from 'react';
-import { Pressable, Text, TextInput, View } from 'react-native';
+import { Pressable, TextInput, View } from 'react-native';
 import { Btn, Cap, Inked, Note, Panel } from '../components/ui';
 import { Hero, heroFor } from '../components/Hero';
 import { enterRoom, request } from '../net';
 import { getState, go, setProfile, setState, useApp } from '../store';
 import { ALIASES, BADGES, COLORS, FONT, INK, useTheme } from '../theme';
+import { Text } from '../components/Text';
 
 const clean = (s: string) => s.toUpperCase().replace(/[^A-Z]/g, '').slice(0, 5);
 

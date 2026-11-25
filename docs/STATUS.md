@@ -57,6 +57,11 @@ Each agent edits **only its own section**, at the end of every working session. 
     it only gives up on a final answer, and then goes Home with a message.
   - `src/config.ts`: `?server=` works in development only, so a crafted link can't send a player's token elsewhere.
   - `src/screens/Home.tsx`: invite links fill in the room code again.
+  - `src/components/Text.tsx` (new): on Android the comic font lost its last letter ("7" read as "1", "BLUE WINS!" showed "BLUE").
+    **Import `Text` from there**, not from `react-native`.
+  - `app.json`: no microphone, overlay or storage permissions; no backup of session tokens; `versionCode`.
+  - `expo-asset` and `expo-system-ui` added (missing peer dependency; Android dark mode); `public/` makes the web app installable.
+  - `.github/workflows/android.yml` (new) builds the APK. A native release build was played on an Android 15 emulator.
   - `src/components/ui.tsx`: `initial(name)` shows emoji initials whole.
 - Please add a host-only "Stop the game" button that sends `game:abort`, so a missing spymaster can't block a room,
   and show `data.reason` of `room:event {kind:'abort'}` (your `play → lobby` routing already works).
