@@ -53,19 +53,23 @@ function ClueFx({ fx, done }: { fx: Extract<Fx, { kind: 'clue' }>; done: () => v
   const { width, height } = useWindowDimensions();
   const { a, reduced } = useLife(2600, done);
   const cl = fx.clue, team = cl.team === 'r' ? c.red : c.blue;
-  const wordSize = Math.min(130, Math.max(48, (Math.min(width, 900) * 0.9) / Math.max(4, cl.word.length + 2)));
+  // Size the word from the real space inside the bubble so even a 16-letter clue fits on one line, never clipped.
+  const bubbleW = Math.min(width - 32, 760);
+  const inner = bubbleW - 10 /* shadow */ - 12 /* borders */ - 2 * 22 /* padding */;
+  const perChar = 0.56;                    // Bangers glyph width ≈ 0.5em, plus letter spacing and shadow
+  const wordSize = Math.floor(Math.max(26, Math.min(120, inner / (Math.max(3, cl.word.length) * perChar + 0.3))));
   return (
-    <View style={fill} accessibilityLiveRegion="assertive">
-      <Animated.View style={[fill, { backgroundColor: 'rgba(22,19,14,0.55)', opacity: a.interpolate({ inputRange: [0, 1, 2], outputRange: [0, 1, 0] }) }]} />
-      <Animated.View style={{ alignItems: 'center', width: Math.min(width - 24, 760), opacity: a.interpolate({ inputRange: [0, 0.2, 1, 2], outputRange: [0, 1, 1, 0] }),
-        transform: reduced ? [] : [{ scale: a.interpolate({ inputRange: [0, 1, 2], outputRange: [0.2, 1, 1.15] }) }, { rotate: a.interpolate({ inputRange: [0, 1, 2], outputRange: ['-18deg', '-3deg', '3deg'] }) }] }}>
+    <View style={fill} accessibilityLiveRegion="assertive" accessibilityLabel={`${TEAM[cl.team].n} spymaster says ${cl.word}, ${cl.number === 0 ? 'unlimited' : cl.number}`}>
+      <Animated.View style={[fill, { backgroundColor: 'rgba(22,19,14,0.8)', opacity: a.interpolate({ inputRange: [0, 1, 2], outputRange: [0, 1, 0] }) }]} />
+      <Animated.View style={{ alignItems: 'center', width: bubbleW, opacity: a.interpolate({ inputRange: [0, 0.2, 1, 2], outputRange: [0, 1, 1, 0] }),
+        transform: reduced ? [] : [{ scale: a.interpolate({ inputRange: [0, 1, 2], outputRange: [0.3, 1, 1.04] }) }, { rotate: a.interpolate({ inputRange: [0, 1, 2], outputRange: ['-12deg', '-1.5deg', '0deg'] }) }] }}>
         <View style={{ marginRight: 10, marginBottom: 10, alignSelf: 'stretch' }}>
-          <View style={{ position: 'absolute', left: 10, top: 10, right: -10, bottom: -10, backgroundColor: INK, borderRadius: 200 }} />
-          <View style={{ backgroundColor: '#fff', borderWidth: 6, borderColor: INK, borderRadius: 200, paddingVertical: Math.min(48, height * 0.05), paddingHorizontal: 30, alignItems: 'center' }}>
-            <Text style={{ fontFamily: FONT.bold, fontSize: 20, letterSpacing: 3, color: team, textTransform: 'uppercase' }}>{TEAM[cl.team].g} {TEAM[cl.team].n} spymaster says</Text>
-            <Text adjustsFontSizeToFit numberOfLines={1} style={comic(wordSize, INK, team, 6)}>{cl.word}</Text>
+          <View style={{ position: 'absolute', left: 10, top: 10, right: -10, bottom: -10, backgroundColor: INK, borderRadius: 48 }} />
+          <View style={{ backgroundColor: '#fff', borderWidth: 6, borderColor: INK, borderRadius: 48, paddingVertical: Math.max(18, Math.min(40, height * 0.04)), paddingHorizontal: 22, alignItems: 'center', gap: 4 }}>
+            <Text style={{ fontFamily: FONT.bold, fontSize: 18, letterSpacing: 2.5, color: team, textTransform: 'uppercase', textAlign: 'center' }}>{TEAM[cl.team].g} {TEAM[cl.team].n} spymaster says</Text>
+            <Text numberOfLines={1} style={[comic(wordSize, INK, team, Math.max(2, Math.round(wordSize / 22))), { letterSpacing: 1, lineHeight: Math.round(wordSize * 1.1) }]}>{cl.word}</Text>
             <View style={{ marginTop: 6, backgroundColor: team, borderWidth: 4, borderColor: INK, paddingHorizontal: 22, transform: [{ rotate: '4deg' }] }}>
-              <Text style={comic(Math.round(wordSize * 0.6), '#fff', INK, 3)}>{cl.number === 0 ? '∞' : cl.number}</Text>
+              <Text style={comic(Math.max(36, Math.min(72, Math.round(wordSize * 0.6))), '#fff', INK, 3)}>{cl.number === 0 ? '∞' : cl.number}</Text>
             </View>
           </View>
         </View>

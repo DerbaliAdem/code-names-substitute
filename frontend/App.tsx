@@ -7,7 +7,7 @@ import React, { useEffect, useRef } from 'react';
 import { Animated, Linking, Pressable, ScrollView, Text, View, type ScrollViewInstance } from 'react-native';
 import { SafeAreaProvider, SafeAreaView } from 'react-native-safe-area-context';
 import FxLayer from './src/components/FxLayer';
-import { detectFx, screenShake } from './src/fx';
+import { detectFx, fire, screenShake } from './src/fx';
 import { connect } from './src/net';
 import type { RoomView } from './src/protocol';
 import Board from './src/screens/Board';
@@ -64,7 +64,7 @@ function Main() {
       connect();
     })();
     // Debug hook for testing the UI without a backend (web console): cn.setView(fakeRoomView)
-    (globalThis as any).cn = { setView, getState, go };
+    (globalThis as any).cn = { setView, getState, go, fire };
     return off;
   }, []);
   useEffect(() => { scroll.current?.scrollTo({ y: 0, animated: false }); }, [screen]);
