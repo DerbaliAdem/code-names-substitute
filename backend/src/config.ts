@@ -1,7 +1,12 @@
 /** Environment configuration, validated once at start-up. See .env.example. */
 import { z } from 'zod';
 
-const DEFAULT_ORIGINS = 'http://localhost:5173,http://127.0.0.1:5173,https://derbaliadem.github.io';
+const DEFAULT_ORIGINS = [
+  'https://derbaliadem.github.io', // web app on GitHub Pages
+  'http://localhost:8081', // Expo web dev server
+  'http://localhost:5173', // static web build served locally
+  'http://127.0.0.1:5173',
+].join(',');
 
 function isOrigin(value: string): boolean {
   return URL.canParse(value) && new URL(value).origin === value;

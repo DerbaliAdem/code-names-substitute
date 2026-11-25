@@ -57,6 +57,27 @@ describe('connections', () => {
     await expect(s.connect({ extraHeaders: { origin: 'http://localhost:5173' } })).resolves.toBeDefined();
   });
 
+  it('accepts the Expo web dev server', async () => {
+    await start();
+    await expect(s.connect({ extraHeaders: { origin: 'http://localhost:8081' } })).resolves.toBeDefined();
+  });
+
+  it('accepts native apps, which send no origin or (React Native WebSockets) the address of the server itself', async () => {
+    await start();
+    await expect(s.connect()).resolves.toBeDefined();
+    await expect(s.connect({ extraHeaders: { origin: s.url } })).resolves.toBeDefined();
+    const secure = { origin: 'https://game.example', host: 'game.example' };
+    await expect(s.connect({ extraHeaders: secure })).resolves.toBeDefined();
+  });
+
+  it.each(['null', 'not a url', 'https://game.example.evil.com', 'https://game.example:8443'])(
+    'refuses the origin %s',
+    async (origin) => {
+      await start();
+      await expect(s.connect({ extraHeaders: { origin, host: 'game.example' } })).rejects.toThrow();
+    },
+  );
+
   it('caps the total number of connections', async () => {
     await start({ maxConnections: 2 });
     const first = await s.connect();

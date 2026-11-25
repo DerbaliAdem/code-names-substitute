@@ -7,7 +7,12 @@ describe('loadConfig', () => {
     expect(loadConfig({})).toMatchObject({
       port: 3000,
       host: '0.0.0.0',
-      corsOrigins: ['http://localhost:5173', 'http://127.0.0.1:5173', 'https://derbaliadem.github.io'],
+      corsOrigins: [
+        'https://derbaliadem.github.io',
+        'http://localhost:8081',
+        'http://localhost:5173',
+        'http://127.0.0.1:5173',
+      ],
       clientIp: null,
       logLevel: 'info',
     });

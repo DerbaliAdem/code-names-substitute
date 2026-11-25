@@ -6,6 +6,7 @@ import type { Config } from './config.js';
 import { GameHandlers, type GameServer } from './handlers.js';
 import { createApp } from './http.js';
 import { errorFields, type Logger } from './logger.js';
+import { isAllowedOrigin } from './origin.js';
 import { realSchedule, RoomStore, type Schedule } from './rooms.js';
 
 const SWEEP_MS = 15_000;
@@ -41,8 +42,7 @@ export function createServer({ config, logger, now = Date.now, schedule = realSc
 
   /** CORS does not apply to WebSockets, so the origin is checked here as well. */
   function admit(request: IncomingMessage): string | null {
-    const { origin } = request.headers;
-    if (origin && !config.corsOrigins.includes(origin)) return 'Origin not allowed';
+    if (!isAllowedOrigin(request, config.corsOrigins)) return 'Origin not allowed';
     if (io.engine.clientsCount >= config.maxConnections) return 'Server full';
     const ip = ipOf(request);
     if (ip && (connectionsPerIp.get(ip) ?? 0) >= config.maxConnectionsPerIp) return 'Too many connections';

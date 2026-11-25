@@ -12,8 +12,9 @@ services:
     envVars:
       - key: NODE_VERSION
         value: "22"
+      # The server's own address is here because React Native WebSockets send it as their Origin.
       - key: CORS_ORIGIN
-        value: https://derbaliadem.github.io,http://localhost:5173
+        value: https://derbaliadem.github.io,https://codenames-pulp-api.onrender.com,http://localhost:8081,http://localhost:5173
       # Header with the real client address, for per-address limits. If Render doesn't send it,
       # those limits are skipped (everything else still applies).
       - key: CLIENT_IP_HEADER
