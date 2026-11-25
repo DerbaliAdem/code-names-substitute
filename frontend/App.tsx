@@ -7,7 +7,8 @@ import { useFonts } from 'expo-font';
 import { StatusBar } from 'expo-status-bar';
 import React, { useEffect, useRef } from 'react';
 import { Animated, Linking, Pressable, ScrollView, View, type ScrollViewInstance } from 'react-native';
-import { SafeAreaProvider, SafeAreaView } from 'react-native-safe-area-context';
+import { SafeAreaProvider, SafeAreaView, useSafeAreaInsets } from 'react-native-safe-area-context';
+import { BoardDock } from './src/screens/Board';
 import FxLayer from './src/components/FxLayer';
 import UpdatePrompt from './src/components/UpdatePrompt';
 import { detectFx, fire, screenShake } from './src/fx';
@@ -56,6 +57,7 @@ function Main() {
   const { screen, conn, ready } = useApp();
   const { c, dark } = useTheme();
   const scroll = useRef<ScrollViewInstance>(null);
+  const insets = useSafeAreaInsets();
   const Current = SCREENS[screen] ?? Home;
 
   useEffect(() => {
@@ -90,6 +92,7 @@ function Main() {
           </View>
         </ScrollView>
       </Animated.View>
+      {ready && screen === 'board' && <BoardDock bottom={insets.bottom} />}
       <FxLayer />
       {ready && <UpdatePrompt />}
     </SafeAreaView>

@@ -100,6 +100,32 @@ function VsBurst() {
   );
 }
 
+/** Idea 6: what's still missing before the mission can begin, ticking itself off as people sit down. */
+function Briefing({ v }: { v: RoomView }) {
+  const who = (team: Team, role: Role) => v.players.filter((p) => p.team === team && p.role === role).map((p) => p.name);
+  const rows = (['r', 'b'] as const).flatMap((k) => {
+    const spy = who(k, 'spymaster'), agents = who(k, 'agent'), n = TEAM[k].n;
+    return [
+      { ok: spy.length > 0, text: spy.length ? `${n} spymaster: ${spy[0]}` : `${n} needs a spymaster` },
+      { ok: agents.length > 0, text: agents.length ? `${n} agents: ${agents.join(', ')}` : `${n} needs at least 1 agent` },
+    ];
+  });
+  return (
+    <View accessibilityRole="list" style={{ backgroundColor: '#fff9e0', borderWidth: 3, borderColor: INK, paddingHorizontal: 12, paddingVertical: 6 }}>
+      <Text style={{ fontFamily: FONT.display, fontSize: 22, letterSpacing: 1, color: INK }}>MISSION BRIEFING</Text>
+      {rows.map((r) => (
+        <View key={r.text} accessibilityLabel={(r.ok ? 'Done: ' : 'Missing: ') + r.text}
+          style={{ flexDirection: 'row', alignItems: 'center', gap: 10, paddingVertical: 4, borderTopWidth: 2, borderStyle: 'dashed', borderTopColor: '#16130e33' }}>
+          <View style={{ width: 22, height: 22, borderWidth: 3, borderColor: INK, backgroundColor: r.ok ? '#ffd23c' : 'transparent', alignItems: 'center', justifyContent: 'center' }}>
+            {r.ok && <Text style={{ fontFamily: FONT.display, fontSize: 16, color: INK }}>✓</Text>}
+          </View>
+          <Text style={{ fontFamily: FONT.bold, fontSize: 16, letterSpacing: 0.5, color: r.ok ? INK : '#c0262d', flexShrink: 1 }} numberOfLines={1}>{r.text}</Text>
+        </View>
+      ))}
+    </View>
+  );
+}
+
 /** Word list for the room's board. Stored in room settings, so every player gets the same board. */
 function LangSwitch({ value, enabled, onChange }: { value: Lang; enabled: boolean; onChange: (l: Lang) => void }) {
   const opt = (l: Lang, label: string) => {
@@ -266,6 +292,7 @@ export default function Lobby() {
 
       {/* bottom bar: timer + begin */}
       <View style={{ backgroundColor: '#f6e7a8', borderWidth: 4, borderColor: INK, padding: 12, gap: 10 }}>
+        {lobby && <Briefing v={v} />}
         <LangSwitch value={v.settings.lang ?? 'en'} enabled={lobby && host} onChange={async (lang) => flash(await request('settings:update', { settings: { lang } }))} />
         <TimerSlider value={v.settings.timer} enabled={lobby && host} note={!lobby ? ' · locked during the game' : host ? '' : ' · host only'} onChange={async (timer) => flash(await request('settings:update', { settings: { timer } }))} />
         <Pressable accessibilityRole="button" accessibilityState={{ disabled: !beginOn }} disabled={!beginOn}

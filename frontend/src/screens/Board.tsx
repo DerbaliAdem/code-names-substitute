@@ -24,12 +24,14 @@ export function perms(v: RoomView | null) {
 const CARD_NAME: Record<Card, string> = { r: 'red', b: 'blue', n: 'neutral', x: 'assassin' };
 
 function cardStyle(c: Palette, t: Card | undefined, revealed: boolean) {
-  if (!t) return { bg: c.panel, fg: c.ink, stripe: null as string | null };
-  if (revealed) return { bg: { r: c.red, b: c.blue, n: '#fbf6e6', x: INK }[t], fg: t === 'n' ? INK : t === 'x' ? '#ffd23c' : '#fff', stripe: null };
-  // Spymaster key view (unrevealed)
-  if (t === 'x') return { bg: INK, fg: '#ffd23c', stripe: null };
-  if (t === 'n') return { bg: c.tan, fg: c.tan === '#d9c79a' ? INK : c.ink, stripe: null };
-  return { bg: c.panel, fg: c.ink, stripe: t === 'r' ? c.red : c.blue };
+  const plain = { stripe: null as string | null, hatch: null as string | null, border: c.ink };
+  if (!t) return { ...plain, bg: c.panel, fg: c.ink };
+  if (revealed) return { ...plain, bg: { r: c.red, b: c.blue, n: '#fbf6e6', x: INK }[t], fg: t === 'n' ? INK : t === 'x' ? '#ffd23c' : '#fff' };
+  // Spymaster key view (unrevealed): the whole card is hatched in its team colour, with a matching border.
+  if (t === 'x') return { ...plain, bg: INK, fg: '#ffd23c', border: '#ffd23c' };
+  if (t === 'n') return { ...plain, bg: c.panel, fg: c.ink, border: c.tan };
+  const col = t === 'r' ? c.red : c.blue;
+  return { ...plain, bg: c.panel, fg: c.ink, hatch: col, border: col };
 }
 
 const POP: Record<string, { word: string; color: (c: Palette) => string }> = {
@@ -71,6 +73,13 @@ function WordCard({ v, i, canGuess, size, inner, onError }: { v: RoomView; i: nu
         r.type === 'x' ? Animated.sequence([kick(-6), kick(6), kick(-5), kick(5), kick(-3), kick(0)]) : Animated.delay(0),
       ]).start(() => { pop.setValue(0); setPopping(false); });
     });
+    // Safety net: whatever interrupts the animation (a busy frame, a hidden tab), the card always ends fully flipped.
+    const safety = setTimeout(() => {
+      flip.stopAnimation(); shake.stopAnimation(); pop.stopAnimation();
+      flip.setValue(1); shake.setValue(0); pop.setValue(0);
+      setShown(true); setPopping(false);
+    }, 2000);
+    return () => clearTimeout(safety);
   }, [!!r]); // eslint-disable-line react-hooks/exhaustive-deps
 
   const t: Card | undefined = r && shown ? r.type : v.key ? v.key[i] : undefined;
@@ -97,8 +106,14 @@ function WordCard({ v, i, canGuess, size, inner, onError }: { v: RoomView; i: nu
         <View style={{ flex: 1 }}>
           {!(r && shown) && <View style={{ position: 'absolute', left: 3, top: 3, right: -3, bottom: -3, backgroundColor: c.ink }} />}
           <Animated.View style={{ flex: 1, transform: [{ translateX: shake }, { scaleX: flip }] }}>
-            <View style={{ flex: 1, backgroundColor: st.bg, borderWidth: 3, borderColor: c.ink, alignItems: 'center', justifyContent: 'center', padding: 2, overflow: 'hidden', transform: (r && shown) || pressed || busy ? [{ translateX: 3 }, { translateY: 3 }] : undefined }}>
-              {st.stripe && <View style={{ position: 'absolute', top: 0, left: 0, right: 0, height: 7, backgroundColor: st.stripe }} />}
+            <View style={{ flex: 1, backgroundColor: st.bg, borderWidth: 3, borderColor: st.border, alignItems: 'center', justifyContent: 'center', padding: 2, overflow: 'hidden', transform: (r && shown) || pressed || busy ? [{ translateX: 3 }, { translateY: 3 }] : undefined }}>
+              {st.hatch && (
+                <View pointerEvents="none" style={{ position: 'absolute', left: 0, top: 0, right: 0, bottom: 0, opacity: 0.38 }}>
+                  {[-60, -35, -10, 15, 40, 65, 90, 115].map((x) => (
+                    <View key={x} style={{ position: 'absolute', top: -20, bottom: -20, left: `${x}%`, width: 6, backgroundColor: st.hatch!, transform: [{ rotate: '-35deg' }] }} />
+                  ))}
+                </View>
+              )}
               {r && shown && r.type === 'n' && (
                 // A picked white card stays remarkable: hatched paper.
                 <View pointerEvents="none" style={{ position: 'absolute', left: 0, top: 0, right: 0, bottom: 0 }}>
@@ -107,7 +122,7 @@ function WordCard({ v, i, canGuess, size, inner, onError }: { v: RoomView; i: nu
                   ))}
                 </View>
               )}
-              {t && <Text style={{ position: 'absolute', left: 3, top: st.stripe ? 8 : 1, fontSize: size * 0.8, color: st.stripe ?? st.fg }}>{MARK[t]}</Text>}
+              {t && <Text style={{ position: 'absolute', left: 3, top: st.stripe ? 8 : 1, fontSize: size * 0.8, color: st.hatch ?? st.fg }}>{MARK[t]}</Text>}
               <Text numberOfLines={1} style={{ fontFamily: r && shown ? FONT.display : FONT.bold, fontSize: fit, lineHeight: Math.round(fit * 1.15), textTransform: rtl ? 'none' : 'uppercase', writingDirection: rtl ? 'rtl' : 'ltr', color: st.fg, textAlign: 'center', letterSpacing: rtl ? 0 : 0.5 }}>{word}</Text>
             </View>
           </Animated.View>
@@ -192,14 +207,6 @@ export default function Board() {
   const header = (
     <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: 12 }}>
       <Burst small title="THE BOARD" />
-      <View style={{ flexDirection: 'row', gap: 10 }}>
-        {(['r', 'b'] as const).map((k) => (
-          <View key={k} style={{ flexDirection: 'row', alignItems: 'baseline', gap: 6, backgroundColor: c.panel, borderWidth: 3, borderColor: c.ink, paddingHorizontal: 10 }}>
-            <Cap>{TEAM[k].g} {TEAM[k].n.toUpperCase()}</Cap>
-            <Text style={{ fontFamily: FONT.display, fontSize: 32, color: k === 'r' ? c.red : c.blue }}>{v ? v.remaining[k] : k === 'r' ? 9 : 8}</Text>
-          </View>
-        ))}
-      </View>
     </View>
   );
   if (!live || !v) {
@@ -211,10 +218,11 @@ export default function Board() {
     );
   }
 
-  const can = perms(v), p = me(v), over = v.phase === 'over', cl = v.clue;
+  const can = perms(v), p = me(v), over = v.phase === 'over';
   const boardW = Math.min(width, 720) - 32;
   const fontSize = Math.max(13, Math.min(27, boardW / 24));
   const cardInner = boardW * 0.182 - 12;   // card width minus borders and padding
+  const waiting = !over && !!p?.team && p.team !== v.turn;   // the other team is playing
   let role = 'Spectating. Join a team in the lobby before the next game.';
   if (p?.team) role = `You are the ${TEAM[p.team].n} ${p.role}. ` + (over ? '' :
     can.guess ? 'Tap a word to guess it.' : can.clue ? 'Send your clue below.' :
@@ -224,20 +232,17 @@ export default function Board() {
     <View style={{ gap: 16 }}>
       {over && <VictoryReport v={v} />}
       {header}
-      <View accessibilityLiveRegion="polite" style={{ backgroundColor: c.panel, borderWidth: 3, borderColor: c.ink, borderLeftWidth: over ? 3 : 14, borderLeftColor: over ? c.ink : v.turn === 'r' ? c.red : c.blue, paddingVertical: 4, paddingHorizontal: 12 }}>
-        <Text style={{ fontFamily: FONT.bold, fontSize: 18, textTransform: 'uppercase', letterSpacing: 1, color: c.ink }}>
-          {over ? 'Game over' : `${TEAM[v.turn].g} ${TEAM[v.turn].n} team · ` + (cl ? `clue ${cl.word} ${cl.number} · ${cl.number === 0 ? 'no limit' : Math.max(0, cl.number + 1 - v.guessesThisTurn) + ' guesses left'}` : 'waiting for the spymaster')}
-        </Text>
-      </View>
+      <Scoreboard v={v} />
       <TimerBar v={v} />
       <Cap>{role}</Cap>
-      <View>
+      {waiting && <Meanwhile v={v} />}
+      <View style={{ opacity: waiting ? 0.6 : 1 }}>
         <View style={{ flexDirection: 'row', flexWrap: 'wrap', justifyContent: 'space-between' }}>
           {v.words.map((_, i) => <WordCard key={i} v={v} i={i} canGuess={can.guess} size={fontSize} inner={cardInner} onError={setMsg} />)}
         </View>
       </View>
+      {!!v.key && !over && <KeyLegend />}
       <Note text={msg} />
-      {can.end && <Btn small variant="alt" label="End turn" onPress={async () => { const r = await request('turn:end'); setMsg(r.ok ? '' : r.error.message); }} />}
       {can.clue && <ClueForm v={v} />}
       <Panel>
         <Cap>Clues so far</Cap>
@@ -250,6 +255,110 @@ export default function Board() {
         <Btn small variant="alt" label="Lobby" onPress={() => go('lobby')} />
         <Btn small variant="alt" label="Leave the room" onPress={leaveRoom} />
       </View>
+    </View>
+  );
+}
+
+/** Idea 1: one pip per agent card, filled as the team finds them, and a tilted flag for whose turn it is. */
+function Scoreboard({ v }: { v: RoomView }) {
+  const { c } = useTheme();
+  const over = v.phase === 'over';
+  const side = (k: 'r' | 'b') => {
+    const total = v.first === k ? 9 : 8, found = total - v.remaining[k], col = k === 'r' ? c.red : c.blue;
+    return (
+      <View accessibilityLabel={`${TEAM[k].n}: ${found} of ${total} agents found`} style={{ flexDirection: k === 'r' ? 'row' : 'row-reverse', alignItems: 'center', gap: 6, flexShrink: 1 }}>
+        <Text style={{ fontFamily: FONT.display, fontSize: 22, letterSpacing: 1, color: col }}>{k === 'r' ? `${TEAM.r.g} RED` : `BLUE ${TEAM.b.g}`}</Text>
+        <View style={{ flexDirection: k === 'r' ? 'row' : 'row-reverse', flexWrap: 'wrap', gap: 3, flexShrink: 1 }}>
+          {Array.from({ length: total }, (_, i) => (
+            <View key={i} style={{ width: 11, height: 18, borderWidth: 2, borderColor: c.ink, backgroundColor: i < found ? col : 'transparent', transform: [{ skewX: '-10deg' }] }} />
+          ))}
+        </View>
+      </View>
+    );
+  };
+  const col = v.turn === 'r' ? c.red : c.blue;
+  return (
+    <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', gap: 8, flexWrap: 'wrap' }}>
+      {side('r')}
+      <View accessibilityLiveRegion="polite" style={{ backgroundColor: over ? c.ink : col, borderWidth: 3, borderColor: INK, paddingHorizontal: 12, paddingVertical: 1, transform: [{ rotate: v.turn === 'r' ? '-3deg' : '3deg' }] }}>
+        <Text style={{ fontFamily: FONT.display, fontSize: 20, letterSpacing: 1, color: '#fff' }}>{over ? 'GAME OVER' : `${TEAM[v.turn].n.toUpperCase()}'S TURN`}</Text>
+      </View>
+      {side('b')}
+    </View>
+  );
+}
+
+/** Idea 3: legend under the spymaster's key view. */
+function KeyLegend() {
+  const { c } = useTheme();
+  const item = (label: string, bg: string, border: string) => (
+    <View key={label} style={{ flexDirection: 'row', alignItems: 'center', gap: 5 }}>
+      <View style={{ width: 14, height: 14, backgroundColor: bg, borderWidth: 2, borderColor: border }} />
+      <Cap>{label}</Cap>
+    </View>
+  );
+  return (
+    <View style={{ flexDirection: 'row', flexWrap: 'wrap', gap: 14 }}>
+      {item('Red', c.red, c.red)}{item('Blue', c.blue, c.blue)}{item('Bystander', 'transparent', c.tan)}{item('Assassin', INK, '#ffd23c')}
+    </View>
+  );
+}
+
+/** Idea 4: comic caption while the other team plays. */
+function Meanwhile({ v }: { v: RoomView }) {
+  const t = TEAM[v.turn];
+  const spy = v.players.find((p) => p.team === v.turn && p.role === 'spymaster');
+  const left = v.clue ? (v.clue.number === 0 ? 'no limit' : `${Math.max(0, v.clue.number + 1 - v.guessesThisTurn)} guesses left`) : '';
+  const what = v.clue ? `Guessing "${v.clue.word}" · ${left}` : `${spy?.name || 'Their spymaster'} is thinking`;
+  return (
+    <View accessibilityLiveRegion="polite" style={{ flexDirection: 'row', flexWrap: 'wrap', alignItems: 'center', gap: 12 }}>
+      <View style={{ backgroundColor: '#ffd23c', borderWidth: 3, borderColor: INK, paddingHorizontal: 12, paddingVertical: 2, transform: [{ rotate: '-1.5deg' }] }}>
+        <Text style={{ fontFamily: FONT.display, fontSize: 20, letterSpacing: 1, color: INK }}>MEANWHILE, AT {t.n.toUpperCase()} HQ…</Text>
+      </View>
+      <View style={{ backgroundColor: '#fff', borderWidth: 3, borderColor: INK, borderRadius: 30, paddingHorizontal: 14, paddingVertical: 3, flexShrink: 1 }}>
+        <Text style={{ fontFamily: FONT.display, fontSize: 18, letterSpacing: 1, color: INK }}>{what}{v.clue ? '' : '…'}</Text>
+      </View>
+    </View>
+  );
+}
+
+/** Idea 2: the clue dock, pinned under the scrolling page (rendered by App while the board is shown). */
+export function BoardDock({ bottom }: { bottom: number }) {
+  const { view: v } = useApp();
+  const { c } = useTheme();
+  const [msg, setMsg] = useState('');
+  if (!v || v.phase !== 'play') return null;
+  const can = perms(v), cl = v.clue, col = v.turn === 'r' ? c.red : c.blue;
+  const total = cl ? cl.number + 1 : 0, used = v.guessesThisTurn;
+  return (
+    <View accessibilityLiveRegion="polite" style={{ backgroundColor: c.panel, borderTopWidth: 4, borderTopColor: col, paddingTop: 8, paddingBottom: 8 + bottom, paddingHorizontal: 16 }}>
+      <View style={{ width: '100%', maxWidth: 720, alignSelf: 'center', flexDirection: 'row', alignItems: 'center', gap: 10, flexWrap: 'wrap' }}>
+        {cl ? (
+          <>
+            <Cap>{TEAM[cl.team].g} Clue</Cap>
+            <Text style={{ fontFamily: FONT.display, fontSize: 30, letterSpacing: 2, color: c.ink, flexShrink: 1 }} numberOfLines={1}>{cl.word}</Text>
+            <View style={{ backgroundColor: col, borderWidth: 3, borderColor: INK, paddingHorizontal: 8 }}>
+              <Text style={{ fontFamily: FONT.display, fontSize: 22, color: '#fff' }}>{cl.number === 0 ? '∞' : cl.number}</Text>
+            </View>
+            <View style={{ flexDirection: 'row', gap: 4, marginLeft: 'auto' }} accessibilityLabel={cl.number === 0 ? 'No limit on guesses' : `${Math.max(0, total - used)} of ${total} guesses left`}>
+              {cl.number === 0 ? <Cap>No limit</Cap> : Array.from({ length: total }, (_, i) => (
+                <View key={i} style={{ width: 16, height: 16, borderRadius: 8, borderWidth: 3, borderColor: c.ink, backgroundColor: i < used ? c.ink : 'transparent' }} />
+              ))}
+            </View>
+            {can.end && (
+              <Pressable accessibilityRole="button" onPress={async () => { const r = await request('turn:end'); setMsg(r.ok ? '' : r.error.message); }}
+                style={{ backgroundColor: '#ffd23c', borderWidth: 3, borderColor: INK, paddingHorizontal: 10, paddingVertical: 2 }}>
+                <Text style={{ fontFamily: FONT.display, fontSize: 18, letterSpacing: 1, color: INK }}>END TURN</Text>
+              </Pressable>
+            )}
+          </>
+        ) : (
+          <Text style={{ fontFamily: FONT.display, fontSize: 20, letterSpacing: 1, color: c.ink }}>
+            {can.clue ? 'YOUR MOVE: SEND A CLUE BELOW ↓' : `${TEAM[v.turn].g} WAITING FOR THE ${TEAM[v.turn].n.toUpperCase()} SPYMASTER…`}
+          </Text>
+        )}
+      </View>
+      {!!msg && <Cap style={{ textAlign: 'center' }}>{msg}</Cap>}
     </View>
   );
 }
