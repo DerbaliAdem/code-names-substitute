@@ -1,9 +1,9 @@
 import * as Clipboard from 'expo-clipboard';
 import React, { useState } from 'react';
 import { Platform, Share, Text, View } from 'react-native';
-import { Avatar, Body, Btn, Burst, Cap, H3, Note, Panel, Row, Tag } from '../components/ui';
+import { Avatar, Body, Btn, Burst, Cap, Field, H3, Note, Panel, Row, Tag } from '../components/ui';
 import { leaveRoom, request } from '../net';
-import { TEAM, type Player, type Role, type RoomView, type Settings, type Team } from '../protocol';
+import { TEAM, type Player, type Role, type RoomView, type Team } from '../protocol';
 import { go, me, useApp } from '../store';
 import { FONT, INK, useTheme } from '../theme';
 
@@ -30,13 +30,21 @@ export function PlayerRow({ p, you }: { p: Player; you: boolean }) {
   );
 }
 
-const TIMERS: Settings['timer'][] = [0, 45, 90, 150];
+const TIMERS = [0, 30, 60, 90, 120];
+const fmt = (s: number) => (s ? (s % 60 ? `${Math.floor(s / 60) ? Math.floor(s / 60) + 'm ' : ''}${s % 60}s` : `${s / 60} min`) : 'Off');
 
 export default function Lobby() {
   const { view: v } = useApp();
   const { c } = useTheme();
   const [msg, setMsg] = useState('');
   const flash = (res: { ok: boolean; error?: { message: string } }) => setMsg(res.ok ? '' : res.error!.message);
+  const [custom, setCustom] = useState('');
+  const setTimer = async (timer: number) => flash(await request('settings:update', { settings: { timer } }));
+  function applyCustom() {
+    const n = parseInt(custom, 10);
+    if (!n || n < 15 || n > 600) { setMsg('Pick a time between 15 and 600 seconds.'); return; }
+    setCustom(''); setTimer(n);
+  }
 
   if (!v) {
     return (
@@ -106,13 +114,20 @@ export default function Lobby() {
 
       <Panel>
         <Cap>Game settings{host ? '' : ' · host only'}</Cap>
-        <Body style={{ fontFamily: FONT.bold }}>Turn timer</Body>
+        <Body style={{ fontFamily: FONT.bold }}>Turn timer · {fmt(v.settings.timer)}</Body>
         <View style={{ flexDirection: 'row', gap: 8, flexWrap: 'wrap' }}>
           {TIMERS.map((t) => (
-            <Btn key={t} small variant={v.settings.timer === t ? 'hl' : 'alt'} label={t ? `${t}s` : 'Off'} disabled={!lobby || !host}
-              onPress={async () => flash(await request('settings:update', { settings: { timer: t } }))} />
+            <Btn key={t} small variant={v.settings.timer === t ? 'hl' : 'alt'} label={fmt(t)} disabled={!lobby || !host} onPress={() => setTimer(t)} />
           ))}
         </View>
+        {lobby && host && (
+          <View style={{ flexDirection: 'row', gap: 8, alignItems: 'center', flexWrap: 'wrap' }}>
+            <Field value={custom} onChangeText={(t) => setCustom(t.replace(/[^0-9]/g, '').slice(0, 3))} placeholder="Seconds" keyboardType="number-pad" maxLength={3}
+              accessibilityLabel="Custom turn timer in seconds" onSubmitEditing={applyCustom} style={{ width: 120 }} />
+            <Btn small label="Set my time" onPress={applyCustom} />
+            <Cap>15 to 600 seconds</Cap>
+          </View>
+        )}
       </Panel>
 
       {lobby

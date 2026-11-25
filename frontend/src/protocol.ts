@@ -8,7 +8,7 @@ export interface Profile { name: string; alias: string; color: string; badge: st
 export interface Player extends Profile { id: string; team: Team | null; role: Role | null; connected: boolean; isHost: boolean }
 export interface Reveal { type: Card; team: Team; by: string; clueId: string | null }
 export interface Clue { id: string; word: string; number: number; team: Team; by: string; hits: number }
-export interface Settings { timer: 0 | 45 | 90 | 150 }
+export interface Settings { timer: number } // seconds per turn: 0 = off, otherwise 15–600
 
 export interface RoomView {
   code: string;

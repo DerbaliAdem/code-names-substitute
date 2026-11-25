@@ -2,7 +2,8 @@ import React, { useEffect, useRef, useState } from 'react';
 import { Animated, Easing, Pressable, Text, TextInput, View, useWindowDimensions } from 'react-native';
 import { ND, useReducedMotion } from '../motion';
 import { Body, Btn, Burst, Cap, H3, Note, Panel, Row, Tag } from '../components/ui';
-import { request } from '../net';
+import { leaveRoom, request } from '../net';
+import VictoryReport from '../components/VictoryReport';
 import { MARK, TEAM, type Card, type RoomView } from '../protocol';
 import { play } from '../sound';
 import { go, me, now, playerName, useApp } from '../store';
@@ -108,54 +109,6 @@ function WordCard({ v, i, canGuess, size, onError }: { v: RoomView; i: number; c
   );
 }
 
-/** Comic speech bubble that pops over the board whenever a spymaster sends a clue. */
-function ClueFlash({ v }: { v: RoomView }) {
-  const { c } = useTheme();
-  const reduced = useReducedMotion();
-  const anim = useRef(new Animated.Value(0)).current;
-  const lastId = useRef(v.clue?.id ?? null);          // don't animate a clue that was already there when we arrived
-  const [clue, setClue] = useState<RoomView['clue']>(null);
-
-  useEffect(() => {
-    const id = v.clue?.id ?? null;
-    if (!id || id === lastId.current) { lastId.current = id; return; }
-    lastId.current = id;
-    setClue(v.clue);
-    anim.setValue(0);
-    Animated.sequence([
-      Animated.spring(anim, { toValue: 1, friction: 5, tension: 120, useNativeDriver: ND }),
-      Animated.delay(reduced ? 1200 : 1500),
-      Animated.timing(anim, { toValue: 2, duration: 280, easing: Easing.in(Easing.quad), useNativeDriver: ND }),
-    ]).start(({ finished }) => { if (finished) setClue(null); });
-  }, [v.clue?.id]); // eslint-disable-line react-hooks/exhaustive-deps
-
-  if (!clue) return null;
-  const teamColor = clue.team === 'r' ? c.red : c.blue;
-  return (
-    <View pointerEvents="none" style={{ position: 'absolute', left: 0, right: 0, top: 0, bottom: 0, alignItems: 'center', justifyContent: 'center', zIndex: 10 }}>
-      <Animated.View accessibilityLiveRegion="assertive" style={{
-        opacity: anim.interpolate({ inputRange: [0, 0.2, 1, 2], outputRange: [0, 1, 1, 0] }),
-        transform: reduced ? [] : [
-          { scale: anim.interpolate({ inputRange: [0, 1, 2], outputRange: [0.3, 1, 0.85] }) },
-          { rotate: anim.interpolate({ inputRange: [0, 1, 2], outputRange: ['-14deg', '-3deg', '2deg'] }) },
-        ],
-        alignItems: 'center' }}>
-        <View style={{ marginRight: 7, marginBottom: 7 }}>
-          <View style={{ position: 'absolute', left: 7, top: 7, right: -7, bottom: -7, backgroundColor: INK, borderRadius: 80 }} />
-          <View style={{ backgroundColor: '#fff', borderWidth: 4, borderColor: INK, borderRadius: 80, paddingVertical: 14, paddingHorizontal: 34, alignItems: 'center' }}>
-            <Text style={{ fontFamily: FONT.bold, fontSize: 13, letterSpacing: 2, color: teamColor, textTransform: 'uppercase' }}>{TEAM[clue.team].g} {TEAM[clue.team].n} spymaster says</Text>
-            <Text style={{ fontFamily: FONT.display, fontSize: 46, letterSpacing: 2, color: INK, textShadowColor: teamColor, textShadowOffset: { width: 3, height: 3 }, textShadowRadius: 0 }}>
-              {clue.word} · {clue.number === 0 ? '∞' : clue.number}
-            </Text>
-          </View>
-        </View>
-        {/* bubble tail */}
-        <View style={{ width: 0, height: 0, marginTop: -9, marginLeft: -60, borderLeftWidth: 14, borderRightWidth: 14, borderTopWidth: 24, borderLeftColor: 'transparent', borderRightColor: 'transparent', borderTopColor: INK }} />
-      </Animated.View>
-    </View>
-  );
-}
-
 function TimerBar({ v }: { v: RoomView }) {
   const { c } = useTheme();
   const [, setT] = useState(0);
@@ -249,6 +202,7 @@ export default function Board() {
 
   return (
     <View style={{ gap: 16 }}>
+      {over && <VictoryReport v={v} />}
       {header}
       <View accessibilityLiveRegion="polite" style={{ backgroundColor: c.panel, borderWidth: 3, borderColor: c.ink, borderLeftWidth: over ? 3 : 14, borderLeftColor: over ? c.ink : v.turn === 'r' ? c.red : c.blue, paddingVertical: 4, paddingHorizontal: 12 }}>
         <Text style={{ fontFamily: FONT.bold, fontSize: 18, textTransform: 'uppercase', letterSpacing: 1, color: c.ink }}>
@@ -261,11 +215,9 @@ export default function Board() {
         <View style={{ flexDirection: 'row', flexWrap: 'wrap', justifyContent: 'space-between' }}>
           {v.words.map((_, i) => <WordCard key={i} v={v} i={i} canGuess={can.guess} size={fontSize} onError={setMsg} />)}
         </View>
-        <ClueFlash v={v} />
       </View>
       <Note text={msg} />
       {can.end && <Btn small variant="alt" label="End turn" onPress={async () => { const r = await request('turn:end'); setMsg(r.ok ? '' : r.error.message); }} />}
-      {over && <Btn label="See the victory report" onPress={() => go('win')} />}
       {can.clue && <ClueForm v={v} />}
       <Panel>
         <Cap>Clues so far</Cap>
@@ -274,6 +226,10 @@ export default function Board() {
             right={<Tag>{playerName(e.by, v)} · {e.hits} hit{e.hits === 1 ? '' : 's'}</Tag>} />
         )) : <Cap>No clues yet</Cap>}
       </Panel>
+      <View style={{ flexDirection: 'row', gap: 8, flexWrap: 'wrap' }}>
+        <Btn small variant="alt" label="Lobby" onPress={() => go('lobby')} />
+        <Btn small variant="alt" label="Leave the room" onPress={leaveRoom} />
+      </View>
     </View>
   );
 }

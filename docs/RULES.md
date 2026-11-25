@@ -29,7 +29,7 @@ them (Rules screen, disabled buttons, error messages from the server).
 Ending a turn means: `turn` flips, `turnNo += 1`, `guessesThisTurn = 0`, `clue = null`, and the timer restarts.
 
 ## Timer
-* `settings.timer` seconds per turn (0 = off). It covers the whole turn, clue plus guesses.
+* `settings.timer` seconds per turn: 0 = off, otherwise any whole number from 15 to 600 chosen by the host. It covers the whole turn, clue plus guesses.
 * The server runs it. When `turnEndsAt` passes, the server ends the turn and sends `room:event {kind:'timeout'}`.
 
 ## Game over

@@ -1,6 +1,6 @@
 # Protocol – frontend ⇄ backend contract
 
-**Version: 1.1** · Transport: **Socket.IO v4** (WebSocket, polling fallback) · Encoding: JSON
+**Version: 1.2** · Transport: **Socket.IO v4** (WebSocket, polling fallback) · Encoding: JSON
 
 This file is the single source of truth. If the code and this file disagree, this file wins
 and the code gets fixed. To change it, follow `AGENTS.md` §4.
@@ -101,7 +101,7 @@ interface Clue {
 }
 
 interface Settings {
-  timer: 0 | 45 | 90 | 150;   // seconds per turn, 0 = off
+  timer: number;              // seconds per turn: 0 = off, otherwise an integer from 15 to 600 (players pick any value)
 }
 
 interface RoomView {          // what `room:state` carries – one per player
@@ -176,7 +176,7 @@ Host rule: the room creator is host. If the host leaves or is removed, host pass
 | `NO_CLUE` | agents can't guess before a clue is given |
 | `CLUE_ACTIVE` | a clue was already given this turn |
 | `INVALID_CLUE` | empty, more than one word, or it matches a board word (message says why) |
-| `INVALID_NUMBER` | number out of 0–9, or greater than the team's remaining cards |
+| `INVALID_NUMBER` | clue number out of 0–9 or greater than the team's remaining cards, or timer not 0 or 15–600 |
 | `ALREADY_REVEALED` | card already revealed |
 | `RATE_LIMITED` | more than 20 events per second from one socket |
 
@@ -200,3 +200,4 @@ all: ← room:event {kind:'reveal', data:{index:12, type:'r'}}, room:state
 
 * **1.0** – initial contract.
 * **1.1** – clients are now a React Native app (Android, iOS, web). Native clients have no `Origin` header. No payload changes.
+* **1.2** – `settings.timer` accepts any integer 0 or 15–600 (was 0/45/90/150). Invalid values → `INVALID_NUMBER`.

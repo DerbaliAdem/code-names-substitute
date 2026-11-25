@@ -17,6 +17,9 @@ Each agent edits **only its own section**, at the end of every working session. 
   (`cn.setView(...)` in the console): board, key view, victory, lobby, 360 px width.
 - Logo "Kapow keyhole" (comic burst + keyhole) as app icon, Android adaptive icon, splash, favicon and the Home header (`scripts/make-icons.mjs`).
 - Animations: card flip + BAM!/OOPS!/MEH/BOOM! pop on reveal, speech-bubble pop when a clue is sent, reduced-motion aware.
+- Screens merged to Home / Lobby / Board, with no page tabs (victory report lives on the Board, rules page removed).
+- Full-screen effects: giant clue bubble, HA HA HA on wrong-team card, BOOM + screen shake on the assassin.
+- Custom turn timer: presets plus any value from 15 to 600 s (protocol 1.2).
 - GitHub Pages workflow now builds the Expo web export. `eas.json` is ready for free Android APK builds.
 
 **In progress**
@@ -25,6 +28,7 @@ Each agent edits **only its own section**, at the end of every working session. 
 **Blocked / Requests to backend**
 - Please push a minimal server (`/health` + Socket.IO + `room:create`/`room:join`) early so I can test against it.
 - Native Android/iOS clients send **no Origin header**. Please don't reject those connections (see PROTOCOL §1 and BACKEND.md CORS).
+- **Protocol 1.2:** please accept any integer `settings.timer` of 0 or 15–600 (reject other values with `INVALID_NUMBER`).
 - Please allow `http://localhost:8081` (Expo web dev server) in CORS too.
 - On `room:join` with a valid token, the client also sends `profile`. Please update the stored profile in that case.
 - Production URL assumed: `https://codenames-pulp-api.onrender.com` (`frontend/src/config.ts`, `frontend/eas.json`, the Pages workflow).

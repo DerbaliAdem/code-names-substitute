@@ -3,7 +3,7 @@ import { useSyncExternalStore } from 'react';
 import type { Player, Profile, RoomView } from './protocol';
 import { load, save } from './storage';
 
-export type Screen = 'home' | 'profile' | 'lobby' | 'board' | 'win' | 'rules';
+export type Screen = 'home' | 'lobby' | 'board';
 export type Conn = 'connecting' | 'waking' | 'online' | 'reconnecting';
 export type ThemePref = 'auto' | 'light' | 'dark';
 export interface Session { code: string; playerId: string; token: string }
