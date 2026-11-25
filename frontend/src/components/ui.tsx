@@ -27,7 +27,7 @@ export function Panel({ children, top, style }: { children: React.ReactNode; top
 
 export function Cap({ children, style }: { children: React.ReactNode; style?: StyleProp<TextStyle> }) {
   const { c } = useTheme();
-  return <Text style={[{ fontFamily: FONT.bold, fontSize: 12, letterSpacing: 1.8, textTransform: 'uppercase', color: c.ink, opacity: 0.75 }, style]}>{children}</Text>;
+  return <Text style={[{ fontFamily: FONT.bold, fontSize: 13, letterSpacing: 1.6, lineHeight: 17, textTransform: 'uppercase', color: c.ink, opacity: 0.88 }, style]}>{children}</Text>;
 }
 
 export function Body({ children, style }: { children: React.ReactNode; style?: StyleProp<TextStyle> }) {

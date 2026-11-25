@@ -35,7 +35,7 @@ function Dossier() {
           </Inked>
           <View style={{ flex: 1, gap: 4 }}>
             <Cap>Code name</Cap>
-            <TextInput value={p.name} onChangeText={(t) => setProfile({ name: t })} maxLength={14} placeholder="AGENT" placeholderTextColor={c.ink + '66'} autoCorrect={false} accessibilityLabel="Code name"
+            <TextInput value={p.name} onChangeText={(t) => setProfile({ name: t })} maxLength={14} placeholder="AGENT" placeholderTextColor={c.ink + '66'} autoCorrect={false} spellCheck={false} accessibilityLabel="Code name"
               style={{ fontFamily: FONT.display, fontSize: 30, letterSpacing: 1, color: c.ink, borderBottomWidth: 3, borderStyle: 'dashed', borderBottomColor: c.ink, paddingVertical: 0, textTransform: 'uppercase' }} />
             <Pressable accessibilityRole="button" accessibilityLabel={`Alias ${p.alias}, tap to change`} onPress={() => setProfile({ alias: ALIASES[(ALIASES.indexOf(p.alias) + 1) % ALIASES.length] })}>
               <Text style={{ fontFamily: FONT.bold, fontSize: 15, letterSpacing: 1, color: c.ink }}>ALIAS: {p.alias.toUpperCase()} ↻</Text>

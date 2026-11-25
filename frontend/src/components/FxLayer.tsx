@@ -12,7 +12,7 @@ const JOKER_GREEN = '#3fbf3f', JOKER_PURPLE = '#6a2c91';
 
 export default function FxLayer() {
   const [queue, setQueue] = useState<Fx[]>([]);
-  useEffect(() => onFx((f) => setQueue((q) => (f.kind === 'assassin' ? [f] : [...q, f]).slice(-3))), []);
+  useEffect(() => onFx((f) => setQueue((q) => (f.kind === 'assassin' ? [f] : [...q, f]).slice(-4))), []);
   const cur = queue[0];
   if (!cur) return null;
   const done = () => setQueue((q) => q.slice(1));
@@ -21,6 +21,9 @@ export default function FxLayer() {
       {cur.kind === 'clue' && <ClueFx key={cur.id} fx={cur} done={done} />}
       {cur.kind === 'laugh' && <LaughFx key={cur.id} fx={cur} done={done} />}
       {cur.kind === 'assassin' && <AssassinFx key={cur.id} fx={cur} done={done} />}
+      {cur.kind === 'neutral' && <NeutralFx key={cur.id} fx={cur} done={done} />}
+      {cur.kind === 'turn' && <TurnFx key={cur.id} fx={cur} done={done} />}
+      {cur.kind === 'end' && <EndFx key={cur.id} fx={cur} done={done} />}
     </Pressable>
   );
 }
@@ -84,7 +87,7 @@ function ClueFx({ fx, done }: { fx: Extract<Fx, { kind: 'clue' }>; done: () => v
 
 function LaughFx({ fx, done }: { fx: Extract<Fx, { kind: 'laugh' }>; done: () => void }) {
   const { width } = useWindowDimensions();
-  const { a, reduced } = useLife(1800, done, 200);
+  const { a, reduced } = useLife(3200, done, 200);   // the laugh lingers
   const has = [0, 1, 2].map(() => useRef(new Animated.Value(0)).current); // eslint-disable-line react-hooks/rules-of-hooks
   useEffect(() => {
     if (reduced) { has.forEach((h) => h.setValue(1)); return; }
@@ -160,6 +163,80 @@ function AssassinFx({ fx, done }: { fx: Extract<Fx, { kind: 'assassin' }>; done:
         <Text style={{ marginTop: 14, fontFamily: FONT.bold, fontSize: 18, letterSpacing: 2, color: '#fff', textTransform: 'uppercase' }}>{playerName(fx.by)} tapped {fx.word}</Text>
       </Animated.View>
       <Animated.View pointerEvents="none" style={[fill, { backgroundColor: '#fff', opacity: flash }]} />
+    </View>
+  );
+}
+
+/** White (neutral) card: a big grey "MEH…" stamp and who picked it, on every screen. */
+function NeutralFx({ fx, done }: { fx: Extract<Fx, { kind: 'neutral' }>; done: () => void }) {
+  const { width } = useWindowDimensions();
+  const { a } = useLife(1700, done, 220);
+  const big = Math.min(170, width / 3.4);
+  return (
+    <View style={fill} accessibilityLiveRegion="assertive" accessibilityLabel={`${playerName(fx.by)} picked ${fx.word}, a neutral card`}>
+      <Animated.View style={[fill, { backgroundColor: '#3a362e', opacity: a.interpolate({ inputRange: [0, 1, 2], outputRange: [0, 0.72, 0] }) }]} />
+      <Animated.View style={{ alignItems: 'center', opacity: a.interpolate({ inputRange: [0, 0.2, 1, 2], outputRange: [0, 1, 1, 0] }),
+        transform: [{ translateY: a.interpolate({ inputRange: [0, 1, 2], outputRange: [-260, 0, 40] }) }, { rotate: a.interpolate({ inputRange: [0, 1, 2], outputRange: ['14deg', '-5deg', '-8deg'] }) }] }}>
+        <View style={{ backgroundColor: '#efe6cc', borderWidth: 6, borderColor: INK, paddingHorizontal: 28, paddingVertical: 6 }}>
+          <Text style={comic(big, '#8a8270', INK, 5)}>MEH…</Text>
+        </View>
+        <View style={{ marginTop: 18, backgroundColor: '#fff', borderWidth: 4, borderColor: INK, paddingHorizontal: 16, paddingVertical: 6, maxWidth: width - 32, transform: [{ rotate: '2deg' }] }}>
+          <Text style={{ fontFamily: FONT.display, fontSize: 24, letterSpacing: 1, color: INK, textAlign: 'center' }}>
+            {TEAM[fx.team].g} {playerName(fx.by)} picked {fx.word}… an innocent bystander. Turn over!
+          </Text>
+        </View>
+      </Animated.View>
+    </View>
+  );
+}
+
+/** Turn changes and the first turn: a team-coloured banner sweeps across the screen. */
+function TurnFx({ fx, done }: { fx: Extract<Fx, { kind: 'turn' }>; done: () => void }) {
+  const { c } = useTheme();
+  const { width } = useWindowDimensions();
+  const { a } = useLife(fx.start ? 1300 : 800, done, 260);
+  const col = fx.team === 'r' ? c.red : c.blue;
+  const t = TEAM[fx.team];
+  return (
+    <View style={fill} pointerEvents="none" accessibilityLiveRegion="polite" accessibilityLabel={fx.start ? `Mission start. ${t.n} goes first` : `${t.n} team's turn`}>
+      <Animated.View style={{ width: width + 80, alignItems: 'center', backgroundColor: col, borderTopWidth: 6, borderBottomWidth: 6, borderColor: INK, paddingVertical: 12,
+        transform: [{ rotate: '-4deg' }, { translateX: a.interpolate({ inputRange: [0, 1, 2], outputRange: [-width - 80, 0, width + 80] }) }] }}>
+        {fx.start && <Text style={{ fontFamily: FONT.bold, fontSize: 18, letterSpacing: 4, color: '#fff' }}>MISSION START</Text>}
+        <Text style={comic(Math.min(84, width / 7), '#fff', INK, 5)}>{t.g} {t.n.toUpperCase()}{fx.start ? ' GOES FIRST' : "'S TURN"}</Text>
+      </Animated.View>
+    </View>
+  );
+}
+
+/** Game over, personal: YOU WIN with confetti, or YOU LOSE with a slump. Spectators see who won. */
+function EndFx({ fx, done }: { fx: Extract<Fx, { kind: 'end' }>; done: () => void }) {
+  const { c } = useTheme();
+  const { width, height } = useWindowDimensions();
+  const { a, reduced } = useLife(2400, done, 300);
+  const win = fx.mine === null ? null : fx.mine === fx.winner;
+  const col = fx.winner === 'r' ? c.red : c.blue;
+  const bits = useRef(Array.from({ length: 28 }, (_, i) => ({ x: Math.random(), d: Math.random(), color: [c.red, c.blue, '#ffd23c', '#fff'][i % 4], r: Math.random() * 360 }))).current;
+  const fall = useRef(new Animated.Value(0)).current;
+  useEffect(() => { if (!reduced) Animated.timing(fall, { toValue: 1, duration: 3000, easing: Easing.linear, useNativeDriver: ND }).start(); }, []); // eslint-disable-line react-hooks/exhaustive-deps
+  const big = Math.min(160, width / 4);
+  const title = win === null ? `${TEAM[fx.winner].n.toUpperCase()} WINS!` : win ? 'YOU WIN!' : 'YOU LOSE…';
+  return (
+    <View style={fill} accessibilityLiveRegion="assertive" accessibilityLabel={title}>
+      <Animated.View style={[fill, { backgroundColor: win === false ? '#1a1712' : col, opacity: a.interpolate({ inputRange: [0, 1, 2], outputRange: [0, 0.88, 0] }) }]} />
+      {win !== false && bits.map((b, i) => (
+        <Animated.View key={i} style={{ position: 'absolute', top: 0, left: b.x * width, width: 12, height: 18, backgroundColor: b.color, borderWidth: 2, borderColor: INK,
+          opacity: a.interpolate({ inputRange: [0, 0.5, 1.6, 2], outputRange: [0, 1, 1, 0] }),
+          transform: [{ translateY: fall.interpolate({ inputRange: [0, 1], outputRange: [-40 - b.d * 200, height + 40] }) }, { rotate: fall.interpolate({ inputRange: [0, 1], outputRange: [`${b.r}deg`, `${b.r + 540}deg`] }) }] }} />
+      ))}
+      <Animated.View style={{ alignItems: 'center', opacity: a.interpolate({ inputRange: [0, 0.3, 1, 2], outputRange: [0, 1, 1, 0] }),
+        transform: win === false
+          ? [{ translateY: a.interpolate({ inputRange: [0, 1, 2], outputRange: [-120, 0, 60] }) }, { rotate: a.interpolate({ inputRange: [0, 1, 2], outputRange: ['0deg', '-6deg', '-12deg'] }) }]
+          : [{ scale: a.interpolate({ inputRange: [0, 1, 2], outputRange: [0.2, 1, 1.2] }) }] }}>
+        <Text style={comic(big, win === false ? '#8a8270' : '#ffd23c', INK, 7)}>{title}</Text>
+        <View style={{ marginTop: 10, backgroundColor: col, borderWidth: 4, borderColor: '#fff', paddingHorizontal: 18, paddingVertical: 4, transform: [{ rotate: '-3deg' }] }}>
+          <Text style={comic(Math.round(big * 0.28), '#fff', INK, 3)}>{TEAM[fx.winner].g} {TEAM[fx.winner].n.toUpperCase()} TEAM WINS</Text>
+        </View>
+      </Animated.View>
     </View>
   );
 }

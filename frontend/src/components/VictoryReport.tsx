@@ -42,8 +42,8 @@ export default function VictoryReport({ v }: { v: RoomView }) {
             right={<Tag>{s.bestClue.hits} hit{s.bestClue.hits === 1 ? '' : 's'} · {playerName(s.bestClue.by, v)}</Tag>} />
         ) : <Cap>No clue scored</Cap>}
       </Panel>
-      <Btn label={host ? 'Rematch, same room' : 'Waiting for the host to rematch'} disabled={!host}
-        onPress={async () => { const r = await request('game:rematch'); setMsg(r.ok ? '' : r.error.message); }} />
+      <Btn label={host ? 'Rematch · teams swap sides' : 'Waiting for the host to rematch'} disabled={!host}
+        onPress={async () => { const r = await request('game:rematch', { swap: true }); setMsg(r.ok ? '' : r.error.message); }} />
       <Note text={msg} />
     </View>
   );

@@ -4,7 +4,7 @@ import React, { useEffect, useRef, useState } from 'react';
 import { Platform, Pressable, Share, View, type GestureResponderEvent, type ViewStyle } from 'react-native';
 import { Avatar, Body, Btn, Burst, Cap, H3, Note, Panel } from '../components/ui';
 import { leaveRoom, request } from '../net';
-import { TEAM, type Player, type Role, type RoomView, type Team } from '../protocol';
+import { TEAM, type Lang, type Player, type Role, type RoomView, type Team } from '../protocol';
 import { go, me, useApp } from '../store';
 import { FONT, INK, useTheme } from '../theme';
 import { Text } from '../components/Text';
@@ -96,6 +96,26 @@ function VsBurst() {
       <View style={sq('0deg')} /><View style={sq('45deg')} />
       <View style={{ position: 'absolute', width: 60, height: 60, backgroundColor: '#ffd23c' }} />
       <Text style={{ fontFamily: FONT.display, fontSize: 32, color: INK }}>VS</Text>
+    </View>
+  );
+}
+
+/** Word list for the room's board. Stored in room settings, so every player gets the same board. */
+function LangSwitch({ value, enabled, onChange }: { value: Lang; enabled: boolean; onChange: (l: Lang) => void }) {
+  const opt = (l: Lang, label: string) => {
+    const on = value === l;
+    return (
+      <Pressable key={l} accessibilityRole="radio" accessibilityState={{ checked: on, disabled: !enabled }} accessibilityLabel={l === 'en' ? 'English words' : 'Arabic words'}
+        disabled={!enabled || on} onPress={() => onChange(l)}
+        style={{ flex: 1, alignItems: 'center', paddingVertical: 4, borderWidth: 3, borderColor: INK, backgroundColor: on ? INK : '#fff9e0', opacity: enabled || on ? 1 : 0.5 }}>
+        <Text style={{ fontFamily: l === 'ar' ? undefined : FONT.display, fontWeight: l === 'ar' ? '700' : undefined, fontSize: 20, color: on ? '#ffd23c' : INK }}>{label}</Text>
+      </Pressable>
+    );
+  };
+  return (
+    <View style={{ gap: 6 }}>
+      <Cap style={{ color: INK }}>Words{enabled ? '' : ' · host only'}</Cap>
+      <View accessibilityRole="radiogroup" style={{ flexDirection: 'row', gap: 8 }}>{opt('en', 'ENGLISH')}{opt('ar', 'العربية')}</View>
     </View>
   );
 }
@@ -246,6 +266,7 @@ export default function Lobby() {
 
       {/* bottom bar: timer + begin */}
       <View style={{ backgroundColor: '#f6e7a8', borderWidth: 4, borderColor: INK, padding: 12, gap: 10 }}>
+        <LangSwitch value={v.settings.lang ?? 'en'} enabled={lobby && host} onChange={async (lang) => flash(await request('settings:update', { settings: { lang } }))} />
         <TimerSlider value={v.settings.timer} enabled={lobby && host} note={!lobby ? ' · locked during the game' : host ? '' : ' · host only'} onChange={async (timer) => flash(await request('settings:update', { settings: { timer } }))} />
         <Pressable accessibilityRole="button" accessibilityState={{ disabled: !beginOn }} disabled={!beginOn}
           onPress={async () => { if (!lobby) go('board'); else flash(await request('game:start')); }}

@@ -1,5 +1,5 @@
 import React, { useEffect, useRef, useState } from 'react';
-import { Animated, Easing, Pressable, TextInput, View, useWindowDimensions } from 'react-native';
+import { Animated, Easing, Platform, Pressable, TextInput, View, useWindowDimensions } from 'react-native';
 import { ND, useReducedMotion } from '../motion';
 import { Body, Btn, Burst, Cap, H3, Note, Panel, Row, Tag } from '../components/ui';
 import { leaveRoom, request } from '../net';
@@ -40,7 +40,7 @@ const POP: Record<string, { word: string; color: (c: Palette) => string }> = {
 };
 
 /** One board card. When it gets revealed it flips over, bounces, and a comic word pops out of it. */
-function WordCard({ v, i, canGuess, size, onError }: { v: RoomView; i: number; canGuess: boolean; size: number; onError: (m: string) => void }) {
+function WordCard({ v, i, canGuess, size, inner, onError }: { v: RoomView; i: number; canGuess: boolean; size: number; inner: number; onError: (m: string) => void }) {
   const { c } = useTheme();
   const reduced = useReducedMotion();
   const [busy, setBusy] = useState(false);
@@ -77,6 +77,9 @@ function WordCard({ v, i, canGuess, size, onError }: { v: RoomView; i: number; c
   const st = cardStyle(c, t, !!r && shown);
   const disabled = !canGuess || !!r || busy;
   const word = v.words[i];
+  const rtl = /[\u0590-\u08FF]/.test(word);   // Arabic (or Hebrew) word: right-to-left, no upper case
+  // Biggest size that keeps the whole word on one line inside the card (condensed bold ≈ 0.55em per letter).
+  const fit = Math.max(10, Math.min(size, inner / (word.length * (rtl ? 0.6 : 0.55) + 0.3)));
   const popKind = r ? (r.type === 'x' ? 'x' : r.type === 'n' ? 'n' : r.type === r.team ? 'own' : 'wrong') : 'n';
 
   async function guess() {
@@ -97,7 +100,7 @@ function WordCard({ v, i, canGuess, size, onError }: { v: RoomView; i: number; c
             <View style={{ flex: 1, backgroundColor: st.bg, borderWidth: 3, borderColor: c.ink, alignItems: 'center', justifyContent: 'center', padding: 2, overflow: 'hidden', transform: (r && shown) || pressed || busy ? [{ translateX: 3 }, { translateY: 3 }] : undefined }}>
               {st.stripe && <View style={{ position: 'absolute', top: 0, left: 0, right: 0, height: 7, backgroundColor: st.stripe }} />}
               {t && <Text style={{ position: 'absolute', left: 3, top: st.stripe ? 8 : 1, fontSize: size * 0.8, color: st.stripe ?? st.fg }}>{MARK[t]}</Text>}
-              <Text numberOfLines={2} adjustsFontSizeToFit style={{ fontFamily: r && shown ? FONT.display : FONT.bold, fontSize: size, textTransform: 'uppercase', color: st.fg, textAlign: 'center', letterSpacing: 0.5 }}>{word}</Text>
+              <Text numberOfLines={1} style={{ fontFamily: r && shown ? FONT.display : FONT.bold, fontSize: fit, lineHeight: Math.round(fit * 1.15), textTransform: rtl ? 'none' : 'uppercase', writingDirection: rtl ? 'rtl' : 'ltr', color: st.fg, textAlign: 'center', letterSpacing: rtl ? 0 : 0.5 }}>{word}</Text>
             </View>
           </Animated.View>
           {r && popping && (
@@ -154,8 +157,10 @@ function ClueForm({ v }: { v: RoomView }) {
     <Panel>
       <Cap>Your clue</Cap>
       <View style={{ backgroundColor: '#fff', borderWidth: 3, borderColor: INK, borderRadius: 60, paddingVertical: 10, paddingHorizontal: 24 }}>
-        <TextInput value={word} onChangeText={(t) => setWord(t.toUpperCase())} placeholder="CLUE" placeholderTextColor="#16130e66" maxLength={16} autoCapitalize="characters" autoCorrect={false} accessibilityLabel="Clue word" onSubmitEditing={send}
-          style={{ fontFamily: FONT.display, fontSize: 38, letterSpacing: 2, textAlign: 'center', color: INK, borderBottomWidth: 3, borderBottomColor: INK }} />
+        <TextInput value={word} onChangeText={(t) => { setWord(t.toUpperCase().replace(/\s+/g, '')); if (msg) setMsg(''); }} placeholder="ONE WORD" placeholderTextColor="#16130e55"
+          maxLength={16} autoCapitalize="characters" autoCorrect={false} spellCheck={false} autoComplete="off" returnKeyType="send" accessibilityLabel="Clue word" onSubmitEditing={send}
+          style={[{ fontFamily: FONT.display, fontSize: word.length > 10 ? 30 : 38, letterSpacing: 2, textAlign: 'center', color: INK, paddingVertical: 0 }, Platform.OS === 'web' ? ({ outlineStyle: 'none' } as object) : null]} />
+        <Text style={{ position: 'absolute', right: 16, bottom: 4, fontFamily: FONT.bold, fontSize: 11, letterSpacing: 1, color: '#16130e88' }}>{word.length}/16</Text>
       </View>
       <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 14 }}>
         {numBtn('−', -1, 'Fewer')}
@@ -199,7 +204,9 @@ export default function Board() {
   }
 
   const can = perms(v), p = me(v), over = v.phase === 'over', cl = v.clue;
-  const fontSize = Math.max(9, Math.min(18, (Math.min(width, 720) - 32) / 30));
+  const boardW = Math.min(width, 720) - 32;
+  const fontSize = Math.max(13, Math.min(27, boardW / 24));
+  const cardInner = boardW * 0.182 - 12;   // card width minus borders and padding
   let role = 'Spectating. Join a team in the lobby before the next game.';
   if (p?.team) role = `You are the ${TEAM[p.team].n} ${p.role}. ` + (over ? '' :
     can.guess ? 'Tap a word to guess it.' : can.clue ? 'Send your clue below.' :
@@ -218,7 +225,7 @@ export default function Board() {
       <Cap>{role}</Cap>
       <View>
         <View style={{ flexDirection: 'row', flexWrap: 'wrap', justifyContent: 'space-between' }}>
-          {v.words.map((_, i) => <WordCard key={i} v={v} i={i} canGuess={can.guess} size={fontSize} onError={setMsg} />)}
+          {v.words.map((_, i) => <WordCard key={i} v={v} i={i} canGuess={can.guess} size={fontSize} inner={cardInner} onError={setMsg} />)}
         </View>
       </View>
       <Note text={msg} />

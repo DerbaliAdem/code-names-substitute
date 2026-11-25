@@ -5,7 +5,10 @@ import type { Clue, RoomView, Team } from './protocol';
 export type FxInput =
   | { kind: 'clue'; clue: Clue }
   | { kind: 'laugh'; team: Team; card: Team; by: string; word: string }
-  | { kind: 'assassin'; team: Team; by: string; word: string };
+  | { kind: 'assassin'; team: Team; by: string; word: string }
+  | { kind: 'neutral'; team: Team; by: string; word: string }
+  | { kind: 'turn'; team: Team; start?: boolean }
+  | { kind: 'end'; winner: Team; mine: Team | null };
 export type Fx = FxInput & { id: number };
 
 let n = 0;
@@ -19,13 +22,23 @@ export const screenShake = new Animated.Value(0);
 /** Compare two views of the same room and fire the matching effects. */
 export function detectFx(a: RoomView | null, b: RoomView | null) {
   if (!a || !b || a.code !== b.code) return;
+  // game start
+  if (a.phase !== 'play' && b.phase === 'play') { fire({ kind: 'turn', team: b.turn, start: true }); return; }
   let big = false;
   for (const k of Object.keys(b.revealed || {})) {
     if (a.revealed?.[+k]) continue;
     const r = b.revealed[+k], word = b.words[+k];
     if (r.type === 'x') { fire({ kind: 'assassin', team: r.team, by: r.by, word }); big = true; }
     else if ((r.type === 'r' || r.type === 'b') && r.type !== r.team) { fire({ kind: 'laugh', team: r.team, card: r.type, by: r.by, word }); big = true; }
+    else if (r.type === 'n') { fire({ kind: 'neutral', team: r.team, by: r.by, word }); big = true; }
   }
+  // game over: a personal win / lose card (after the BOOM when it was the assassin)
+  if (a.phase === 'play' && b.phase === 'over' && b.over) {
+    fire({ kind: 'end', winner: b.over.winner, mine: b.players?.find((p) => p.id === b.you)?.team ?? null });
+    return;
+  }
+  // turn passed: End turn, timeout, or a wrong pick
+  if (b.phase === 'play' && a.turn !== b.turn) fire({ kind: 'turn', team: b.turn });
   const last = b.log?.[b.log.length - 1];
   if (!big && last && (b.log.length > (a.log?.length || 0))) fire({ kind: 'clue', clue: last });
 }
