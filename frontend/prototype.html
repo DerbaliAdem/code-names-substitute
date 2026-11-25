@@ -1,0 +1,353 @@
+<title>Codenames Pulp Screens</title><meta name="claude:viewport-fit-sides" content="cover">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Bangers&family=Barlow+Condensed:wght@600;800&display=swap">
+<style>
+/* Layout: one comic issue, six screens from a tab strip; inked panels, hard shadows, halftone ground */
+:root{--bg:#f6e7a8;--dot:#e8c94f;--ink:#16130e;--panel:#fff9e0;--red:#e03a2e;--blue:#2a6bd6;--tan:#d9c79a;--hl:#ffd23c;
+--display:'Bangers','Impact',sans-serif;--body:'Barlow Condensed','Arial Narrow',sans-serif}
+@media (prefers-color-scheme:dark){:root:not([data-theme=light]){--bg:#1c1a17;--dot:#2a2722;--ink:#f6ecc8;--panel:#2b2823;--red:#ff5a4a;--blue:#5b94f5;--tan:#4a4333;color-scheme:dark}}
+:root[data-theme=dark]{--bg:#1c1a17;--dot:#2a2722;--ink:#f6ecc8;--panel:#2b2823;--red:#ff5a4a;--blue:#5b94f5;--tan:#4a4333;color-scheme:dark}
+*{box-sizing:border-box}
+body{background-color:var(--bg);background-image:radial-gradient(var(--dot) 1.5px,transparent 1.6px);background-size:10px 10px;color:var(--ink);font:600 18px/1.25 var(--body);padding-block:20px;padding-left:max(16px,env(safe-area-inset-left,0px));padding-right:max(16px,env(safe-area-inset-right,0px))}
+.wrap{max-width:720px;margin:auto;display:grid;gap:18px}
+h1,h2,h3,p{margin:0}
+.top{display:flex;justify-content:space-between;gap:10px;flex-wrap:wrap;align-items:flex-start}
+.tabs,.tools{display:flex;gap:8px;flex-wrap:wrap}
+.tabs a,.tools button{font:400 18px var(--display);letter-spacing:.05em;text-decoration:none;color:var(--ink);background:var(--panel);border:3px solid var(--ink);box-shadow:3px 3px 0 var(--ink);padding:2px 12px;cursor:pointer}
+.tabs a[aria-current=page]{background:var(--hl);color:#16130e;transform:translate(2px,2px);box-shadow:1px 1px 0 var(--ink)}
+.tools button{font-size:15px}
+a:focus-visible,button:focus-visible,input:focus-visible,select:focus-visible{outline:3px solid var(--blue);outline-offset:2px}
+section{display:none;gap:16px}section.on{display:grid}
+.burst{background:var(--hl);color:#16130e;border:4px solid #16130e;box-shadow:7px 7px 0 var(--ink);padding:18px 16px;text-align:center;transform:rotate(-1.5deg)}
+.burst h1,.burst h2{font:400 clamp(44px,13vw,92px)/.95 var(--display);letter-spacing:.03em;text-shadow:3px 3px 0 var(--red)}
+.burst.sm{padding:4px 16px;box-shadow:5px 5px 0 var(--ink)}.burst.sm h2{font-size:clamp(30px,8vw,46px);text-shadow:2px 2px 0 var(--red)}
+.burst p{font:800 18px var(--body);letter-spacing:.14em;text-transform:uppercase;margin-top:6px}
+.burst.wr h2{text-shadow:3px 3px 0 var(--red)}.burst.wb h2{text-shadow:3px 3px 0 var(--blue)}
+.panel{background:var(--panel);border:3px solid var(--ink);box-shadow:5px 5px 0 var(--ink);padding:12px 14px;display:grid;gap:10px;align-content:start;min-width:0}
+.panel h3{font:400 24px var(--display);letter-spacing:.05em}
+.cap{font:800 12px var(--body);letter-spacing:.16em;text-transform:uppercase;opacity:.75}
+.two{display:grid;grid-template-columns:repeat(auto-fit,minmax(240px,1fr));gap:16px}
+.row{display:flex;gap:8px;align-items:center;flex-wrap:wrap}.row>*{min-width:0}
+.btn{font:400 24px var(--display);letter-spacing:.05em;background:var(--hl);color:#16130e;border:3px solid #16130e;box-shadow:5px 5px 0 var(--ink);padding:6px 18px;cursor:pointer;text-decoration:none;text-align:center;display:block;width:100%}
+.btn:active{transform:translate(4px,4px);box-shadow:none}.btn.alt{background:var(--panel);color:var(--ink);border-color:var(--ink)}
+.btn.r{background:var(--red);color:#fff}.btn.b{background:var(--blue);color:#fff}.btn[disabled]{opacity:.5;cursor:not-allowed;box-shadow:none}
+.btn.sm{font-size:18px;padding:4px 12px;width:auto}
+.stack{display:grid;gap:12px;max-width:420px;margin:0 auto;width:100%}
+.fld{font:800 20px var(--body);padding:6px 10px;border:3px solid var(--ink);background:var(--panel);color:var(--ink);width:100%;max-width:100%}
+.note{font:800 14px var(--body);letter-spacing:.06em;text-transform:uppercase;color:var(--red);min-height:1.2em}
+.team.r{border-top:14px solid var(--red)}.team.b{border-top:14px solid var(--blue)}
+.p{display:flex;justify-content:space-between;align-items:center;gap:8px;border:2px solid var(--ink);padding:4px 10px;background:var(--bg)}
+.p.you{background:var(--hl);color:#16130e;border-width:3px}
+.who{display:flex;align-items:center;gap:10px;min-width:0;overflow-wrap:anywhere}
+.tag{font:400 14px var(--display);letter-spacing:.06em;background:var(--ink);color:var(--panel);padding:0 8px;white-space:nowrap}
+.code{font:400 clamp(36px,10vw,56px) var(--display);letter-spacing:.2em;text-align:center;border:3px dashed var(--ink);padding:4px}
+.me{display:flex;align-items:center;gap:12px}.nm{font:400 30px/1 var(--display);letter-spacing:.05em;overflow-wrap:anywhere}
+.av{width:56px;height:56px;flex:none;display:grid;place-items:center;border:3px solid #16130e;box-shadow:3px 3px 0 var(--ink);color:#fff;font:400 28px/1 var(--display);position:relative;transform:rotate(-3deg)}
+.av.sm{width:34px;height:34px;font-size:18px;box-shadow:2px 2px 0 var(--ink);border-width:2px}
+.av em{position:absolute;right:-8px;bottom:-8px;font:400 15px/1 var(--display);font-style:normal;background:var(--hl);color:#16130e;border:2px solid #16130e;width:22px;height:22px;display:grid;place-items:center}
+.av.sm em{width:16px;height:16px;font-size:10px;right:-6px;bottom:-6px}
+.sw{display:flex;gap:8px;flex-wrap:wrap}.sw button{width:40px;height:40px;border:3px solid var(--ink);cursor:pointer;color:var(--ink);font:400 20px var(--display);background:var(--c,var(--panel))}
+.sw button[aria-checked=true]{outline:3px solid var(--hl);outline-offset:2px;box-shadow:3px 3px 0 var(--ink)}
+.chk{display:flex;gap:10px;align-items:center;font-weight:800}.chk input{width:22px;height:22px;accent-color:var(--ink)}
+/* board */
+.score{display:flex;gap:10px}.s{display:flex;align-items:baseline;gap:6px;background:var(--panel);border:3px solid var(--ink);box-shadow:4px 4px 0 var(--ink);padding:2px 10px}
+.s b{font:400 32px var(--display)}.s i{font:800 12px var(--body);font-style:normal;letter-spacing:.1em}.s.r b{color:var(--red)}.s.b b{color:var(--blue)}
+.head{display:flex;justify-content:space-between;align-items:center;gap:12px;flex-wrap:wrap}
+.turn{font:800 18px var(--body);text-transform:uppercase;letter-spacing:.06em;background:var(--panel);border:3px solid var(--ink);padding:4px 12px}
+.turn.r{border-left:14px solid var(--red)}.turn.b{border-left:14px solid var(--blue)}
+.timer{height:22px;border:3px solid var(--ink);background:var(--panel);position:relative;overflow:hidden}
+.timer i{position:absolute;inset:0 auto 0 0;width:100%;background:var(--hl)}.timer.low i{background:var(--red)}
+.timer span{position:absolute;inset:0;display:grid;place-items:center;font:400 15px var(--display);letter-spacing:.1em;color:#16130e}
+.grid{display:grid;grid-template-columns:repeat(5,1fr);gap:9px}
+.card{position:relative;aspect-ratio:1.05;min-width:0;background:var(--panel);color:var(--ink);border:3px solid var(--ink);box-shadow:3px 3px 0 var(--ink);font:800 clamp(10px,2.8vw,19px) var(--body);text-transform:uppercase;letter-spacing:.03em;cursor:pointer;display:grid;place-items:center;padding:2px;overflow:hidden}
+.card .w{position:relative;overflow-wrap:anywhere}
+.card .mk{position:absolute;left:3px;top:1px;font-size:clamp(9px,2.2vw,15px);line-height:1;display:none}
+.card[data-t=r]{--pat:repeating-linear-gradient(45deg,#0000003a 0 3px,transparent 3px 8px)}
+.card[data-t=b]{--pat:radial-gradient(#ffffff80 1.8px,transparent 2px) 0 0/8px 8px}
+.card[data-t=x]{--pat:repeating-linear-gradient(45deg,var(--hl) 0 3px,transparent 3px 7px),repeating-linear-gradient(-45deg,var(--hl) 0 3px,transparent 3px 7px)}
+.card[data-t=n]{--pat:none}
+.card.key::before,.card.rev::before{content:"";position:absolute;inset:0;background:var(--pat);opacity:.55;pointer-events:none}
+.card.key .mk,.card.rev .mk{display:block}
+.card.key:not(.rev)[data-t=r]{box-shadow:inset 0 7px 0 var(--red),3px 3px 0 var(--ink)}.card.key:not(.rev)[data-t=b]{box-shadow:inset 0 7px 0 var(--blue),3px 3px 0 var(--ink)}
+.card.key:not(.rev)[data-t=x]{background:#16130e;color:var(--hl)}.card.key:not(.rev)[data-t=n]{background:var(--tan);color:#16130e}
+.card.rev{cursor:default;transform:translate(3px,3px);box-shadow:none;color:#fff;font-family:var(--display);font-weight:400;letter-spacing:.05em}
+.card.rev[data-t=r]{background:var(--red)}.card.rev[data-t=b]{background:var(--blue)}.card.rev[data-t=n]{background:var(--tan);color:#16130e}.card.rev[data-t=x]{background:#16130e;color:var(--hl)}
+.card:disabled:not(.rev){cursor:default}.card:hover:not(.rev):not(:disabled){transform:translate(-1px,-1px);box-shadow:5px 5px 0 var(--ink)}
+.bubble{background:#fff;color:#16130e;border:3px solid #16130e;padding:10px 14px;border-radius:50% / 40%;text-align:center}
+.bubble input{font:400 clamp(30px,8vw,44px) var(--display);letter-spacing:.06em;text-align:center;border:0;border-bottom:3px solid #16130e;background:none;color:#16130e;width:100%;text-transform:uppercase}
+.num{display:flex;align-items:center;justify-content:center;gap:12px}.num b{font:400 48px var(--display);min-width:50px;text-align:center}
+.num button{font:400 28px var(--display);width:44px;height:44px;border:3px solid var(--ink);background:var(--panel);color:var(--ink);box-shadow:3px 3px 0 var(--ink);cursor:pointer}
+.log{display:grid;gap:6px}.log .p span:first-child{font:400 22px var(--display);letter-spacing:.05em}
+.stats{display:grid;grid-template-columns:repeat(3,1fr);gap:10px;text-align:center}.stats b{display:block;font:400 40px/1 var(--display)}
+.steps{display:grid;grid-template-columns:repeat(auto-fit,minmax(200px,1fr));gap:16px}
+.steps .panel h3::before{content:attr(data-n);display:inline-grid;place-items:center;width:34px;height:34px;background:var(--red);color:#fff;border:3px solid var(--ink);margin-right:8px;transform:rotate(-6deg)}
+.r-t{color:var(--red)}.b-t{color:var(--blue)}
+@media (prefers-reduced-motion:no-preference){.burst{animation:pop .35s ease-out}}@keyframes pop{from{transform:rotate(-1.5deg) scale(.9)}}
+</style>
+<main class="wrap">
+<div class="top">
+ <nav class="tabs" aria-label="Screens"><a href="#home">Home</a><a href="#profile">Profile</a><a href="#lobby">Lobby</a><a href="#board">Board</a><a href="#win">Victory</a><a href="#rules">Rules</a></nav>
+ <div class="tools"><button id="tSnd" aria-pressed="true"></button><button id="tThm"></button></div>
+</div>
+
+<section id="home">
+ <div class="burst"><h1>CODENAMES!</h1><p>Two teams. One key. Zero room for error.</p></div>
+ <div class="stack">
+  <button class="btn" id="bStart">Start a game</button>
+  <div class="panel"><span class="cap">Join with a room code</span><div class="row"><input class="fld" id="codeIn" maxlength="8" placeholder="KAPOW" aria-label="Room code" style="flex:1 1 140px;text-transform:uppercase"><button class="btn sm" id="bJoin">Join</button></div></div>
+  <a class="btn alt" href="#rules">How to play</a>
+  <p class="note" id="homeNote" role="status"></p>
+ </div>
+ <div class="panel" id="resume" hidden><span class="cap">You are in room</span><div class="row"><b id="resCode" style="font:400 30px var(--display);letter-spacing:.15em"></b><a class="btn sm" href="#lobby">Back to the lobby</a></div></div>
+</section>
+
+<section id="profile">
+ <div class="burst"><h2>YOUR FILE</h2><p>Build your agent before you enter</p></div>
+ <div class="panel" style="max-width:480px;width:100%;margin:auto"><span class="cap">Preview</span>
+  <div class="me"><div id="pAv"></div><div><div class="nm" id="pNm"></div><div class="cap" id="pAl"></div></div></div>
+  <label class="cap" for="fName">Agent name</label><input class="fld" id="fName" maxlength="14" placeholder="Agent" autocomplete="off">
+  <label class="cap" for="fAlias">Alias</label><select class="fld" id="fAlias"><option>The Falcon</option><option>Night Owl</option><option>Red Fox</option><option>Quiet Wolf</option><option>Iron Mole</option></select>
+  <div class="cap">Colour</div><div class="sw" id="fCol" role="radiogroup" aria-label="Colour"></div>
+  <div class="cap">Badge</div><div class="sw" id="fBadge" role="radiogroup" aria-label="Badge"></div>
+ </div>
+ <button class="btn" id="enter" style="max-width:480px;margin:auto">Enter the hideout</button>
+</section>
+
+<section id="lobby">
+ <div class="burst"><h2>THE HIDEOUT</h2><p id="lobSub">Waiting for agents</p></div>
+ <div class="panel" id="lobCode"><span class="cap">Room code · tell your friends</span><div class="code" id="code">-----</div><div class="row"><button class="btn alt sm" id="bCopy">Copy code</button><button class="btn alt sm" id="bLeave">Leave room</button></div></div>
+ <p class="note" id="lobNote" role="status"></p>
+ <div class="two" id="teams"></div>
+ <div class="panel" id="uns"><span class="cap">In the room, no team yet</span><div class="log" id="unsList"></div></div>
+ <div class="panel"><span class="cap">Game settings</span>
+  <div class="row"><label for="timerSel" style="font-weight:800">Turn timer</label><select class="fld" id="timerSel" style="width:auto"><option value="0">Off</option><option value="45">45 seconds</option><option value="90">90 seconds</option><option value="150">150 seconds</option></select></div>
+  <label class="chk"><input type="checkbox" id="hotChk">Pass and play on one device (no seats, no turn rules)</label>
+  <p class="cap">The key is hidden on screen, not locked away. Play with people you trust. Everyone needs this page opened with Contributor access.</p>
+ </div>
+ <button class="btn" id="bBegin">Begin the mission</button>
+</section>
+
+<section id="board">
+ <div class="head"><div class="burst sm"><h2>THE BOARD</h2></div>
+  <div class="score"><span class="s r"><i>▲ RED</i><b id="cr">9</b></span><span class="s b"><i>● BLUE</i><b id="cb">8</b></span></div></div>
+ <div id="boardEmpty" class="panel" hidden><h3>No game running</h3><p>Start a game from Home, join a team in the lobby, then begin the mission.</p><a class="btn" href="#home">Go home</a></div>
+ <div id="boardMain" style="display:grid;gap:16px">
+  <p class="turn" id="turn" role="status"></p>
+  <div class="timer" id="timer" hidden><i id="tFill"></i><span id="tTxt"></span></div>
+  <p class="cap" id="roleLine"></p>
+  <div class="grid" id="grid"></div>
+  <div class="row"><button class="btn alt sm" id="bEnd" hidden>End turn</button><button class="btn alt sm" id="bKey" hidden>Show key</button></div>
+  <div class="panel" id="clueForm" hidden><span class="cap" id="clueCap">Your clue</span>
+   <div class="bubble"><input id="word" maxlength="16" placeholder="CLUE" aria-label="Clue word" autocomplete="off"></div>
+   <div class="num"><button id="m" aria-label="Fewer">−</button><b id="n">2</b><button id="pl" aria-label="More">+</button></div>
+   <p class="cap" style="text-align:center">0 means no limit on guesses</p>
+   <button class="btn r" id="send">Send clue</button><p id="clueMsg" class="note" role="status"></p></div>
+  <div class="panel"><span class="cap">Clues so far</span><div class="log" id="log"></div></div>
+ </div>
+</section>
+
+<section id="win">
+ <div class="burst" id="winBurst"><h2 id="winH">NO WINNER YET</h2><p id="winP">Finish a game to see the report</p></div>
+ <div id="winMain" style="display:grid;gap:16px" hidden>
+  <div class="panel"><div class="stats"><div><b id="stT">0</b><span class="cap">Turns</span></div><div><b id="stR" class="r-t">0</b><span class="cap">▲ Red found</span></div><div><b id="stB" class="b-t">0</b><span class="cap">● Blue found</span></div></div></div>
+  <div class="two"><div class="panel"><span class="cap">Most words found</span><div class="log" id="mvp"></div></div>
+  <div class="panel"><span class="cap">Best clue</span><div class="log" id="best"></div></div></div>
+  <div class="two"><button class="btn" id="bRematch">Rematch, same room</button><a class="btn alt" href="#home">Back to HQ</a></div>
+ </div>
+ <a class="btn" href="#board" id="winEmpty">Back to the board</a>
+</section>
+
+<section id="rules">
+ <div class="burst"><h2>HOW TO PLAY</h2><p>Learn it in four panels</p></div>
+ <div class="steps">
+  <div class="panel"><h3 data-n="1">PICK SIDES</h3><p>Join the red or blue team in the lobby as the spymaster or as an agent. Each team has one spymaster who sees the key.</p></div>
+  <div class="panel"><h3 data-n="2">GIVE A CLUE</h3><p>The spymaster sends one word and one number. The number says how many board words it connects. A clue cannot match a word on the board.</p></div>
+  <div class="panel"><h3 data-n="3">GUESS</h3><p>Agents tap words. Right colour and you keep going, up to the number plus one. Wrong colour ends the turn. A timer can be turned on in the lobby.</p></div>
+  <div class="panel"><h3 data-n="4">AVOID THE ✖</h3><p>Tap the assassin and your team loses at once. Find all your words first to win. Red is ▲ stripes, blue is ● dots, so colour is never the only clue.</p></div>
+ </div>
+ <a class="btn" href="#home">Got it</a>
+</section>
+</main>
+<script>
+(function(){
+const $=id=>document.getElementById(id);
+const esc=s=>String(s==null?'':s).replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+const ls={get(k,d){try{const v=localStorage.getItem(k);return v==null?d:JSON.parse(v)}catch(e){return d}},set(k,v){try{localStorage.setItem(k,JSON.stringify(v))}catch(e){}}};
+const WORDS="AGENT,BANK,CASTLE,DRAGON,EMBASSY,FALCON,GHOST,HOTEL,ICE,JET,KEY,LASER,MOLE,NIGHT,OPERA,PIANO,QUEEN,ROBOT,SPY,TOKYO,VENOM,WALL,YARD,ZERO,BOND,CODE,DIAMOND,ENGINE,FIELD,GLASS,HAMMER,ISLAND,JUNGLE,KNIFE,LIGHT,MOON,NEEDLE,OCEAN,PARK,ROCKET,SHADOW,TRAIN,UNIFORM,VAULT,WAVE,BRIDGE,CLOCK,DOCTOR,EAGLE,FIRE,GOLD,HELMET,INK,JAM,LOCK,MAP,NET,ORBIT,PASSPORT,RADIO,SNOW,TOWER".split(",");
+const TEAM={r:{n:'Red',g:'▲'},b:{n:'Blue',g:'●'}},MK={r:'▲',b:'●',n:'–',x:'✖'};
+const COLS=['#e03a2e','#2a6bd6','#2e9e5b','#8a4fd0','#e08a1e'],BADGES=['★','⚡','☾','✦','◆','☀','♠','✿','⚓','♫','☂','⚙'];
+const other=k=>k=='r'?'b':'r';
+let me=Object.assign({name:'',alias:'The Falcon',col:COLS[1],badge:'★'},ls.get('cnProfile',{}));
+let db=null,user=null,uid=ls.get('cnUid',null),canWrite=null,ref=null,unsub=null,G=null,keyOn=false,clueN=2,timeoutFor=0,lastTick=0,booted=false;
+if(!uid){uid='local_'+Math.random().toString(36).slice(2,10);ls.set('cnUid',uid)}
+
+/* ---------- sound ---------- */
+let ac=null;const snd={on:ls.get('cnSound',true)};
+function A(){if(!ac){try{ac=new(window.AudioContext||window.webkitAudioContext)()}catch(e){}}if(ac&&ac.state=='suspended')ac.resume();return ac}
+function tone(f,d,ty,v,t0,to){const c=A();if(!c||!snd.on)return;const t=c.currentTime+(t0||0),o=c.createOscillator(),g=c.createGain();o.type=ty||'square';o.frequency.setValueAtTime(f,t);if(to)o.frequency.exponentialRampToValueAtTime(to,t+d);g.gain.setValueAtTime(v||.12,t);g.gain.exponentialRampToValueAtTime(.0001,t+d);o.connect(g);g.connect(c.destination);o.start(t);o.stop(t+d+.03)}
+const sfx={good(){tone(520,.1,'triangle',.2);tone(780,.18,'triangle',.2,.09)},neutral(){tone(180,.18,'sine',.28,0,110)},bad(){tone(160,.32,'sawtooth',.14,0,80)},boom(){tone(320,.8,'sawtooth',.18,0,40);tone(60,.8,'sine',.3)},clue(){tone(880,.25,'sine',.18);tone(1320,.2,'sine',.12,.12)},win(){[523,659,784,1047].forEach((f,i)=>tone(f,.28,'triangle',.2,i*.12))},tick(){tone(1200,.04,'square',.07)}};
+addEventListener('pointerdown',()=>A(),{once:true});
+
+/* ---------- state helpers ---------- */
+const clone=o=>JSON.parse(JSON.stringify(o));
+const isObj=v=>v&&typeof v=='object'&&!Array.isArray(v);
+function merge(a,b){for(const k in b){if(isObj(b[k])){a[k]=merge(isObj(a[k])?a[k]:{},b[k])}else a[k]=b[k]}return a}
+function board(){const w=[...WORDS].sort(()=>Math.random()-.5).slice(0,25),f=Math.random()<.5?'r':'b';
+ const t=['x',...Array(7).fill('n'),...Array(f=='r'?9:8).fill('r'),...Array(f=='r'?8:9).fill('b')].sort(()=>Math.random()-.5).join('');return{w,t,first:f}}
+function fresh(code){const b=board();return{code,host:uid,phase:'lobby',w:b.w,t:b.t,first:b.first,turn:b.first,turnNo:1,guesses:0,clue:null,over:null,timer:0,hot:false,turnEnds:null,players:{},rev:{},log:{},created:Date.now()}}
+const P=()=>G&&G.players&&G.players[uid]||null;
+const left=k=>G?[...G.t].filter((c,i)=>c==k&&!(G.rev&&G.rev[i])).length:0;
+const nm=id=>(G&&G.players&&G.players[id]&&G.players[id].name)||'Agent';
+const entries=()=>Object.entries((G&&G.players)||{}).filter(e=>e[1]);
+function note(el,t){$(el).textContent=t||''}
+let q=Promise.resolve();
+function push(patch){const old=G;if(G){G=merge(clone(G),patch)}diff(old,G);render();
+ if(ref){q=q.then(()=>ref.update(patch)).catch(e=>{canWrite=false;note('homeNote','Could not save: '+((e&&e.code)||'error')+'. Viewers can watch but need Contributor access to play.');note('lobNote',$('homeNote').textContent)})}}
+function diff(a,b){if(!booted||!a||!b||a.code!=b.code)return;
+ for(const k in (b.rev||{})){if(!(a.rev&&a.rev[k])){const t=b.t[k],r=b.rev[k];(t=='x'?sfx.boom:t=='n'?sfx.neutral:t==r.team?sfx.good:sfx.bad)()}}
+ if(Object.keys(b.log||{}).length>Object.keys(a.log||{}).length)sfx.clue();
+ if(a.phase!=b.phase){if(b.phase=='play')go('board');else if(b.phase=='over'){setTimeout(sfx.win,b.over&&b.over.why=='assassin'?700:0);go('win')}else if(b.phase=='lobby'&&a.phase!='lobby')go('lobby')}}
+function go(h){if(location.hash!='#'+h)location.hash=h}
+
+/* ---------- rooms ---------- */
+const mkCode=()=>{const c='ABCDEFGHJKLMNPQRSTUVWXYZ';return Array.from({length:5},()=>c[Math.floor(Math.random()*c.length)]).join('')};
+function leaveRoom(){if(unsub){unsub();unsub=null}ref=null;G=null;ls.set('cnRoom',null)}
+function watch(){unsub=ref.onSnapshot(s=>{const old=G;G=s.exists?s.data():null;if(!G&&ref){note('homeNote','That room was closed.')}diff(old,G);booted=true;render()},e=>note('homeNote','Lost the room: '+((e&&e.code)||'error')))}
+async function enter(code,create){code=String(code||'').toUpperCase().replace(/[^A-Z0-9]/g,'');if(!code)return false;
+ leaveRoom();booted=false;
+ if(db){ref=db.doc('rooms/'+code);let s;try{s=await ref.get()}catch(e){ref=null;note('homeNote','Could not reach rooms: '+((e&&e.code)||'error'));return false}
+  if(!s.exists){if(!create){ref=null;note('homeNote','No room with code '+code+'.');return false}
+   try{await ref.set(fresh(code))}catch(e){ref=null;note('homeNote','You need Contributor access to start a game.');return false}}
+  ls.set('cnRoom',code);watch();
+ }else{if(!create){note('homeNote','Shared rooms are not available in this view. Start a local game instead.');return false}
+  G=fresh(code);ls.set('cnRoom',code);booted=true}
+ return true}
+function register(){if(!G)return;const p=P();push({players:{[uid]:{name:me.name||'Agent',alias:me.alias,col:me.col,badge:me.badge,team:p?p.team:null,role:p?p.role:null}}})}
+function seatTaken(k){return entries().some(([id,p])=>id!=uid&&p.team==k&&p.role=='spymaster')}
+function joinSeat(k,role){if(!G||G.phase!='lobby')return;if(role=='spymaster'&&seatTaken(k))return;const p=P()||{};push({players:{[uid]:{name:me.name||'Agent',alias:me.alias,col:me.col,badge:me.badge,team:k,role}}})}
+function leaveSeat(){const p=P();if(!p)return;push({players:{[uid]:{team:null,role:null}}})}
+function ready(){if(G.hot)return'';const t={r:{s:0,a:0},b:{s:0,a:0}};entries().forEach(([i,p])=>{if(p.team&&t[p.team])t[p.team][p.role=='spymaster'?'s':'a']++});
+ for(const k of['r','b']){if(!t[k].s)return TEAM[k].n+' needs a spymaster.';if(!t[k].a)return TEAM[k].n+' needs at least one agent.'}return''}
+function turnPatch(){const sec=G.timer||0;return{turn:other(G.turn),turnNo:(G.turnNo||1)+1,guesses:0,clue:null,turnEnds:sec?Date.now()+sec*1000:null}}
+function begin(){if(!G||G.phase!='lobby'||ready())return;const sec=G.timer||0;push({phase:'play',turn:G.first,turnNo:1,guesses:0,clue:null,over:null,turnEnds:sec?Date.now()+sec*1000:null})}
+function perms(){if(!G||G.phase!='play'||G.over)return{};const p=P(),hot=G.hot,t=G.turn,cl=G.clue&&G.clue.team==t;
+ const agent=hot||(p&&p.role=='agent'&&p.team==t),spy=hot||(p&&p.role=='spymaster'&&p.team==t);
+ return{hot,guess:agent&&(hot||cl),end:agent&&(hot||(G.guesses||0)>=1),clue:spy&&!cl,cl}}
+function tap(i){const c=perms();if(!c.guess||(G.rev&&G.rev[i]))return;const t=G.t[i];
+ const patch={rev:{[i]:{by:uid,team:G.turn,c:G.clue?G.clue.id:null}}};
+ if(t=='x'){Object.assign(patch,{phase:'over',over:{winner:other(G.turn),why:'assassin',by:uid}})}
+ else{const remain=[...G.t].filter((x,j)=>x==t&&j!=i&&!(G.rev&&G.rev[j])).length;
+  if((t=='r'||t=='b')&&remain==0)Object.assign(patch,{phase:'over',over:{winner:t,why:'cleared',by:uid}});
+  else if(t!=G.turn)Object.assign(patch,turnPatch());
+  else{const g=(G.guesses||0)+1;patch.guesses=g;if(G.clue&&G.clue.n>0&&g>=G.clue.n+1)Object.assign(patch,turnPatch())}}
+ push(patch)}
+function endTurn(){if(perms().end)push(turnPatch())}
+function sendClue(){const c=perms();if(!c.clue)return;const w=$('word').value.trim().toUpperCase();
+ const err=m=>note('clueMsg',m);if(!w)return err('Type a one-word clue.');if(/\s/.test(w))return err('One word only.');
+ const bad=G.w.filter((x,i)=>!(G.rev&&G.rev[i])).some(x=>{x=x.toUpperCase();return x==w||(w.length>2&&x.length>2&&(x.includes(w)||w.includes(x)))});
+ if(bad)return err('That clue matches a word on the board.');
+ const rem=left(G.turn);if(clueN>rem)return err('You only have '+rem+' words left.');
+ err('');const k=Object.keys(G.log||{}).length+1,id='c'+String(1000+k);
+ push({clue:{w,n:clueN,team:G.turn,by:uid,id},guesses:0,log:{[id]:{w,n:clueN,team:G.turn,by:uid}}});$('word').value=''}
+function rematch(){if(!G)return;const b=board();push({w:b.w,t:b.t,first:b.first,turn:b.first,turnNo:1,guesses:0,clue:null,over:null,phase:'lobby',turnEnds:null,rev:null,log:null})}
+
+/* ---------- timer ---------- */
+function tick(){const box=$('timer');
+ if(!G||G.phase!='play'||G.over||!G.timer||!G.turnEnds){box.hidden=true;return}
+ box.hidden=false;const l=G.turnEnds-Date.now(),f=Math.max(0,Math.min(1,l/(G.timer*1000)));
+ $('tFill').style.width=(f*100)+'%';box.classList.toggle('low',l<=10000);
+ const s=Math.max(0,Math.ceil(l/1000));$('tTxt').textContent=TEAM[G.turn].g+' '+s+'s';
+ if(l>0&&l<=10000&&s!=lastTick){lastTick=s;sfx.tick()}
+ if(l<=0&&timeoutFor!=G.turnNo){const mem=entries().filter(e=>e[1].team==G.turn).map(e=>e[0]).sort(),all=entries().map(e=>e[0]).sort();
+  const lead=G.hot?G.host:(mem[0]||all[0]);if(lead==uid||l<=-5000){timeoutFor=G.turnNo;push(turnPatch())}}}
+setInterval(tick,250);
+
+/* ---------- rendering ---------- */
+const av=(n,c,b,cls)=>`<div class="av ${cls||''}" style="background:${esc(c)}">${esc((n||'?')[0].toUpperCase())}<em>${esc(b)}</em></div>`;
+function renderBar(){const t=ls.get('cnTheme','auto');$('tSnd').textContent='Sound: '+(snd.on?'On':'Off');$('tSnd').setAttribute('aria-pressed',snd.on);$('tThm').textContent='Theme: '+t[0].toUpperCase()+t.slice(1);
+ if(t=='auto')delete document.documentElement.dataset.theme;else document.documentElement.dataset.theme=t}
+function renderProfile(){const n=me.name.trim()||'Agent';$('pAv').innerHTML=av(n,me.col,me.badge);$('pNm').textContent=n;$('pAl').textContent=me.alias;
+ [...$('fCol').children].forEach(b=>b.setAttribute('aria-checked',b.dataset.v==me.col));[...$('fBadge').children].forEach(b=>b.setAttribute('aria-checked',b.dataset.v==me.badge));
+ $('enter').textContent=G?'Enter the hideout':'Create a room'}
+function renderHome(){$('resume').hidden=!G;if(G)$('resCode').textContent=G.code}
+function row(id,p,you){return`<div class="p${you?' you':''}"><span class="who">${av(p.name,p.col,p.badge,'sm')}<span>${esc(p.name)}${you?' (you)':''}</span></span><span class="tag">${p.role?esc(p.role.toUpperCase()):'WAITING'}</span></div>`}
+function renderLobby(){const has=!!G;$('lobSub').textContent=has?(G.phase=='lobby'?'Waiting for agents':'Mission in progress'):'No room yet';
+ $('code').textContent=has?G.code:'-----';$('bCopy').disabled=!has;
+ if(!has){$('teams').innerHTML='<div class="panel"><h3>No room yet</h3><p>Start a game or join with a code from Home.</p><a class="btn" href="#home">Go home</a></div>';$('uns').hidden=true;$('bBegin').hidden=true;return}
+ $('bBegin').hidden=false;const lobby=G.phase=='lobby',pm=P();
+ $('teams').innerHTML=['r','b'].map(k=>{const mem=entries().filter(e=>e[1].team==k).sort((a,b)=>(a[1].role=='spymaster'?0:1)-(b[1].role=='spymaster'?0:1));
+  const mine=pm&&pm.team==k;let btns='';
+  if(lobby){btns=mine?`<button class="btn alt" data-leave="1">Leave team</button>`:`<button class="btn ${k}" data-seat="${k}:spymaster"${seatTaken(k)?' disabled':''}>${seatTaken(k)?'Spymaster seat taken':'Join as spymaster'}</button><button class="btn alt" data-seat="${k}:agent">Join as agent</button>`}
+  return`<div class="panel team ${k}"><h3>${TEAM[k].g} ${TEAM[k].n} team</h3>${mem.map(([id,p])=>row(id,p,id==uid)).join('')||'<span class="cap">Empty</span>'}${btns}</div>`}).join('');
+ const un=entries().filter(e=>!e[1].team);$('uns').hidden=!un.length;$('unsList').innerHTML=un.map(([id,p])=>row(id,p,id==uid)).join('');
+ $('timerSel').value=String(G.timer||0);$('hotChk').checked=!!G.hot;$('timerSel').disabled=$('hotChk').disabled=!lobby;
+ const why=lobby?ready():'The game is already running.';$('bBegin').disabled=!!why||!lobby;
+ $('bBegin').textContent=lobby?'Begin the mission':'Back to the board';if(!lobby)$('bBegin').disabled=false;
+ if(lobby&&!$('lobNote').textContent.startsWith('Could'))note('lobNote',why||(pm&&pm.team?'':'Pick a team and a role first.'))}
+function renderBoard(){const live=G&&G.phase!='lobby';$('boardEmpty').hidden=!!live;$('boardMain').style.display=live?'grid':'none';
+ if(!live)return;const c=perms(),p=P(),over=G.phase=='over';
+ $('cr').textContent=left('r');$('cb').textContent=left('b');
+ const showKey=over||(G.hot?keyOn:(p&&p.role=='spymaster'));
+ $('grid').innerHTML=G.w.map((w,i)=>{const r=G.rev&&G.rev[i],t=G.t[i];return`<button class="card${r?' rev':''}${showKey?' key':''}" data-t="${t}" data-i="${i}"${!c.guess||r?' disabled':''}><span class="mk">${MK[t]}</span><span class="w">${esc(w)}</span></button>`}).join('');
+ const cl=G.clue&&G.clue.team==G.turn?G.clue:null;
+ const t=$('turn');t.className='turn '+(over?'':G.turn);
+ t.textContent=over?'Game over':TEAM[G.turn].g+' '+TEAM[G.turn].n+' team · '+(cl?'clue '+cl.w+' '+cl.n+' · '+(cl.n==0?'no limit':Math.max(0,cl.n+1-(G.guesses||0))+' guesses left'):'waiting for the spymaster');
+ let rl='Spectating. Join a team in the lobby to play.';if(G.hot)rl='Pass and play: everyone shares this device.';else if(p&&p.team)rl='You are the '+TEAM[p.team].n+' '+p.role+'. '+(over?'':(c.guess?'Tap a word to guess it.':c.clue?'Send your clue below.':p.team==G.turn?(p.role=='agent'?'Waiting for your spymaster.':'Your agents are guessing.'):'The other team is playing.'));
+ $('roleLine').textContent=rl;
+ $('bEnd').hidden=!c.end;$('bKey').hidden=!(G.hot&&!over);$('bKey').textContent=keyOn?'Hide key':'Show key';
+ $('clueForm').hidden=!c.clue;$('n').textContent=clueN==0?'∞':clueN;
+ const keys=Object.keys(G.log||{}).sort();$('log').innerHTML=keys.length?keys.map(k=>{const e=G.log[k],hits=Object.keys(G.rev||{}).filter(i=>G.rev[i].c==k&&G.t[i]==e.team).length;return`<div class="p"><span><span class="${e.team}-t">${TEAM[e.team].g}</span> ${esc(e.w)} · ${e.n}</span><span class="tag">${esc(nm(e.by))} · ${hits} hit${hits==1?'':'s'}</span></div>`}).join(''):'<span class="cap">No clues yet</span>';
+ tick()}
+function renderWin(){const o=G&&G.over;$('winMain').hidden=!o;$('winEmpty').hidden=!!o;
+ if(!o){$('winH').textContent='NO WINNER YET';$('winP').textContent='Finish a game to see the report';$('winBurst').className='burst';return}
+ $('winBurst').className='burst w'+o.winner;$('winH').textContent=TEAM[o.winner].n.toUpperCase()+' WINS!';
+ $('winP').textContent=o.why=='assassin'?nm(o.by)+' tapped the assassin':'Every word found';
+ const rev=G.rev||{},by={};let r=0,b=0;for(const i in rev){const t=G.t[i];if(t=='r')r++;if(t=='b')b++;if((t=='r'||t=='b')&&t==rev[i].team)by[rev[i].by]=(by[rev[i].by]||0)+1}
+ $('stT').textContent=G.turnNo||1;$('stR').textContent=r;$('stB').textContent=b;
+ const top=Object.entries(by).sort((x,y)=>y[1]-x[1]).slice(0,3);
+ $('mvp').innerHTML=top.length?top.map(([id,n],k)=>`<div class="p${k?'':' you'}"><span>${esc(nm(id))}</span><span class="tag">${n} word${n==1?'':'s'}</span></div>`).join(''):'<span class="cap">Nobody found a word</span>';
+ let best=null;for(const k in (G.log||{})){const e=G.log[k],h=Object.keys(rev).filter(i=>rev[i].c==k&&G.t[i]==e.team).length;if(!best||h>best.h)best={e,h}}
+ $('best').innerHTML=best&&best.h?`<div class="p you"><span>${TEAM[best.e.team].g} ${esc(best.e.w)} · ${best.e.n}</span><span class="tag">${best.h} hit${best.h==1?'':'s'} · ${esc(nm(best.e.by))}</span></div>`:'<span class="cap">No clue scored</span>'}
+function render(){renderBar();renderProfile();renderHome();renderLobby();renderBoard();renderWin()}
+
+/* ---------- wiring ---------- */
+const S=[...document.querySelectorAll('section')],T=[...document.querySelectorAll('.tabs a')];
+function show(){const h=(location.hash||'#home').slice(1),id=S.some(s=>s.id==h)?h:'home';S.forEach(s=>s.classList.toggle('on',s.id==id));
+ T.forEach(a=>a.getAttribute('href')=='#'+id?a.setAttribute('aria-current','page'):a.removeAttribute('aria-current'));
+ if(id=='lobby'&&G&&!P())register();render()}
+addEventListener('hashchange',show);
+$('tSnd').onclick=()=>{snd.on=!snd.on;ls.set('cnSound',snd.on);A();if(snd.on)sfx.good();renderBar()};
+$('tThm').onclick=()=>{const o=['auto','light','dark'],c=ls.get('cnTheme','auto');ls.set('cnTheme',o[(o.indexOf(c)+1)%3]);renderBar()};
+$('bStart').onclick=async()=>{note('homeNote','');if(await enter(mkCode(),true))go('profile')};
+$('bJoin').onclick=async()=>{note('homeNote','');if(await enter($('codeIn').value,false))go('profile')};
+$('codeIn').onkeydown=e=>{if(e.key=='Enter')$('bJoin').click()};
+$('fCol').innerHTML=COLS.map(c=>`<button role="radio" data-v="${c}" style="--c:${c}" aria-label="Colour ${c}"></button>`).join('');
+$('fBadge').innerHTML=BADGES.map(b=>`<button role="radio" data-v="${b}" aria-label="Badge ${b}">${b}</button>`).join('');
+$('fName').value=me.name;$('fAlias').value=me.alias;
+const saveMe=()=>ls.set('cnProfile',me);
+$('fName').oninput=e=>{me.name=e.target.value;saveMe();renderProfile()};$('fAlias').onchange=e=>{me.alias=e.target.value;saveMe();renderProfile()};
+$('fCol').onclick=e=>{const b=e.target.closest('button');if(b){me.col=b.dataset.v;saveMe();renderProfile()}};
+$('fBadge').onclick=e=>{const b=e.target.closest('button');if(b){me.badge=b.dataset.v;saveMe();renderProfile()}};
+$('enter').onclick=async()=>{if(!G&&!(await enter(mkCode(),true)))return;register();go('lobby')};
+$('teams').onclick=e=>{const b=e.target.closest('button');if(!b||b.disabled)return;if(b.dataset.leave)leaveSeat();else if(b.dataset.seat){const v=b.dataset.seat.split(':');joinSeat(v[0],v[1])}};
+$('timerSel').onchange=e=>push({timer:+e.target.value});$('hotChk').onchange=e=>push({hot:e.target.checked});
+$('bBegin').onclick=()=>{if(G&&G.phase!='lobby')go('board');else begin()};
+$('bLeave').onclick=()=>{if(G&&P())push({players:{[uid]:null}});leaveRoom();render();go('home')};
+$('bCopy').onclick=()=>{const c=G&&G.code;if(!c)return;try{navigator.clipboard.writeText(c).then(()=>note('lobNote','Code copied.'),()=>note('lobNote','Copy failed. Select the code instead.'))}catch(e){note('lobNote','Copy failed. Select the code instead.')}};
+$('grid').onclick=e=>{const c=e.target.closest('.card');if(c&&!c.disabled)tap(+c.dataset.i)};
+$('bEnd').onclick=endTurn;$('bKey').onclick=()=>{keyOn=!keyOn;render()};
+$('m').onclick=()=>{clueN=Math.max(0,clueN-1);render()};$('pl').onclick=()=>{clueN=Math.min(9,clueN+1);render()};
+$('send').onclick=sendClue;$('word').onkeydown=e=>{if(e.key=='Enter')sendClue()};
+$('bRematch').onclick=rematch;
+
+show();renderBar();
+(async function init(){
+ const cap=async n=>{try{return window.claude&&window.claude.use?await window.claude.use(n):null}catch(e){return null}};
+ user=await cap('user');db=await cap('db');
+ try{const id=user&&await user.id();if(id&&id!=uid){uid=id;ls.set('cnUid',id)}}catch(e){}
+ try{if(user)canWrite=await user.can('data.write')}catch(e){}
+ if(db&&canWrite===false)note('homeNote','You can watch rooms but not play. Ask the owner for Contributor access.');
+ if(!db)note('homeNote','Shared rooms are not available here. You can still play on this device.');
+ const r=ls.get('cnRoom',null);if(r&&db){if(!(await enter(r,false))){leaveRoom();note('homeNote','')}}
+ render()})();
+})();
+</script>
