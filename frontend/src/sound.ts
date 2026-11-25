@@ -11,7 +11,6 @@ const SOURCES = {
   bad: require('../assets/sounds/bad.wav'),
   boom: require('../assets/sounds/boom.wav'),
   clue: require('../assets/sounds/clue.wav'),
-  win: require('../assets/sounds/win.wav'),
   tick: require('../assets/sounds/tick.wav'),
   laugh: require('../assets/sounds/laugh.wav'),
 };
@@ -45,5 +44,4 @@ export function playDiff(a: RoomView | null, b: RoomView | null) {
     play(r.type === 'x' ? 'boom' : r.type === 'n' ? 'neutral' : r.type === r.team ? 'good' : 'laugh');
   }
   if ((b.log?.length || 0) > (a.log?.length || 0)) play('clue');
-  if (a.phase !== 'over' && b.phase === 'over') setTimeout(() => play('win'), b.over?.reason === 'assassin' ? 700 : 0);
 }

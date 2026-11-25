@@ -29,7 +29,6 @@ const SFX = {
   bad: [[160, 0.32, 'sawtooth', 0.14, 0, 80]],
   boom: [[320, 0.8, 'sawtooth', 0.18, 0, 40], [60, 0.8, 'sine', 0.3]],
   clue: [[880, 0.25, 'sine', 0.18], [1320, 0.2, 'sine', 0.12, 0.12]],
-  win: [523, 659, 784, 1047].map((f, i) => [f, 0.28, 'triangle', 0.2, i * 0.12]),
   tick: [[1200, 0.04, 'square', 0.07]],
   // cackling "ha-ha-ha-ha-HA": falling chirps, last one longer
   laugh: [620, 600, 570, 540, 500, 470].flatMap((f, i) => [[f, i === 5 ? 0.3 : 0.11, 'sawtooth', 0.16, i * 0.15, f * 0.7], [f * 1.5, i === 5 ? 0.3 : 0.11, 'triangle', 0.1, i * 0.15, f]]),
