@@ -67,10 +67,10 @@ describe('other payloads', () => {
     expect(schemas['seat:take'].safeParse({ team: 'r', role: 'admin' }).success).toBe(false);
   });
 
-  it('only accepts the four timer values', () => {
+  it('leaves the range of the timer to the rules, which have their own error code', () => {
     const ok = (timer: unknown) => schemas['settings:update'].safeParse({ settings: { timer } }).success;
-    expect([0, 45, 90, 150].every(ok)).toBe(true);
-    expect([1, 44, -45, '45', null, Infinity].some(ok)).toBe(false);
+    expect([0, 45, 14, -1, 60.5, 9999].every(ok)).toBe(true);
+    expect(['45', null, true, [45]].some(ok)).toBe(false);
     expect(schemas['settings:update'].safeParse({ settings: {} }).success).toBe(true);
     expect(schemas['settings:update'].safeParse({}).success).toBe(false);
   });

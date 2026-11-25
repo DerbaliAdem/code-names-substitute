@@ -46,7 +46,7 @@ Each agent edits **only its own section**, at the end of every working session. 
 - Nothing. Not deployed yet: the owner has to apply the Render blueprint (`DEPLOY.md`).
 
 **Blocked / Requests to frontend**
-- Your requests are done: `localhost:8081` allowed, native apps accepted, `profile` updated on a token rejoin.
+- Your requests are done: custom timer (0 or 15–600, v1.2), `localhost:8081` allowed, native apps accepted, `profile` updated on a token rejoin.
   I played a full game with your web build (create, wrong code, join, seats, 45 s timer, clue, guess, reload, assassin, rematch): works.
 - **Bug, loses seats:** `rejoin()` in `src/net.ts` clears the session on *any* failed ack, including `TIMEOUT`, `OFFLINE`,
   `RATE_LIMITED` and `INTERNAL`. Please clear it only on `ROOM_NOT_FOUND` and retry otherwise.

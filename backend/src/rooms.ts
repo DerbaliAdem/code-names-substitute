@@ -14,6 +14,8 @@ const MINUTE = 60_000;
 const LOBBY_GRACE_MS = 10 * MINUTE;
 const EMPTY_ROOM_MS = 30 * MINUTE;
 const HOST_GRACE_MS = MINUTE;
+const MIN_TIMER = 15;
+const MAX_TIMER = 600;
 
 export interface PlayerInternal extends Profile {
   readonly id: string;
@@ -65,6 +67,9 @@ export const realSchedule: Schedule = (run, ms) => {
   const timer = setTimeout(run, ms);
   return () => clearTimeout(timer);
 };
+
+const isValidTimer = (seconds: number) =>
+  seconds === 0 || (Number.isInteger(seconds) && seconds >= MIN_TIMER && seconds <= MAX_TIMER);
 
 const isConnected = (player: PlayerInternal) => player.sockets.size > 0;
 
@@ -232,6 +237,10 @@ export class RoomStore {
   updateSettings(room: Room, playerId: string, settings: Partial<Settings>): void {
     this.assertHost(room, playerId, 'Only the host can change the settings.');
     this.assertLobby(room, 'Settings can only be changed in the lobby.');
+    const { timer } = settings;
+    if (timer !== undefined && !isValidTimer(timer)) {
+      throw new GameError('INVALID_NUMBER', `The timer must be off, or ${MIN_TIMER} to ${MAX_TIMER} seconds.`);
+    }
     room.settings = { ...room.settings, ...settings };
   }
 

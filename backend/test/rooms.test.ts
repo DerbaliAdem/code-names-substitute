@@ -271,6 +271,27 @@ describe('seats and settings', () => {
     expect(codeOf(() => store.rematch(room, ra.id))).toBe('NOT_HOST');
   });
 
+  it.each([0, 15, 37, 600])('accepts a turn timer of %s seconds', (timer) => {
+    const { room, player } = create();
+    store.updateSettings(room, player.id, { timer });
+    expect(room.settings).toEqual({ timer });
+  });
+
+  it.each([1, 14, 601, -15, 45.5, NaN, Infinity])('refuses a turn timer of %s and keeps the old one', (timer) => {
+    const { room, player } = create();
+    store.updateSettings(room, player.id, { timer: 90 });
+    expect(codeOf(() => store.updateSettings(room, player.id, { timer }))).toBe('INVALID_NUMBER');
+    expect(room.settings).toEqual({ timer: 90 });
+  });
+
+  it('runs a custom timer', () => {
+    const { room, rs } = seatedRoom();
+    store.updateSettings(room, rs.id, { timer: 37 });
+    store.start(room, rs.id);
+    clock.advance(37_000);
+    expect(room.game.turnNo).toBe(2);
+  });
+
   it('does not start an incomplete game', () => {
     const { room, player } = create();
     expect(codeOf(() => store.start(room, player.id))).toBe('NOT_READY');

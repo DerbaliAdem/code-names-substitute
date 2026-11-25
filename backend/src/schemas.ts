@@ -51,9 +51,7 @@ export const schemas = {
   'seat:take': z.object({ team: z.enum(['r', 'b']), role: z.enum(['spymaster', 'agent']) }),
   'seat:leave': nothing,
   'settings:update': z.object({
-    settings: z.object({
-      timer: z.union([z.literal(0), z.literal(45), z.literal(90), z.literal(150)]).optional(),
-    }),
+    settings: z.object({ timer: z.number().optional() }),
   }),
   'game:start': nothing,
   'game:abort': nothing,

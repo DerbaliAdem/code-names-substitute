@@ -148,6 +148,9 @@ describe('lobby', () => {
     await b.send('seat:take', { team: 'b', role: 'spymaster' });
     expect(await a.code('seat:take', { team: 'b', role: 'spymaster' })).toBe('SEAT_TAKEN');
     expect(await b.code('settings:update', { settings: { timer: 90 } })).toBe('NOT_HOST');
+    expect(await a.code('settings:update', { settings: { timer: 14 } })).toBe('INVALID_NUMBER');
+    await a.send('settings:update', { settings: { timer: 37 } });
+    await b.until((v) => v.settings.timer === 37);
     await a.send('settings:update', { settings: { timer: 90, unknown: true } });
     const view = await a.until((v) => v.settings.timer === 90);
     expect(view.settings).toEqual({ timer: 90 });

@@ -38,7 +38,8 @@ export interface Clue {
 }
 
 export interface Settings {
-  timer: 0 | 45 | 90 | 150;
+  /** Seconds per turn: 0 = off, otherwise a whole number from 15 to 600. */
+  timer: number;
 }
 
 export interface Outcome {
