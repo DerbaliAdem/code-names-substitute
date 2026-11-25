@@ -82,8 +82,9 @@ backend/
 7. **Validation:** each handler runs `schema.safeParse(payload)`, and on failure acks `BAD_REQUEST`. If the ack callback
    is missing, do nothing and never throw. Wrap every handler in try/catch → `toAck(err)`.
 8. **Rate limit:** a simple per-socket token bucket, 20 events per second → `RATE_LIMITED`.
-9. **CORS:** `new Server(http, { cors: { origin: config.corsOrigins } })`. Allow `http://localhost:5173` plus the
-   GitHub Pages origin (`https://derbaliadem.github.io`) by default.
+9. **CORS:** `new Server(http, { cors: { origin: config.corsOrigins } })`. Allow the GitHub Pages origin
+   (`https://derbaliadem.github.io`) and the Expo web dev server (`http://localhost:8081`) by default.
+   The Android and iOS apps send **no Origin header**, so never reject a connection just because Origin is missing.
 10. **`/health`:** returns `{ ok: true, rooms, uptime }`. Render uses it as the health check, and the frontend uses it to wake the server.
 
 ## Order of work (commit + push after each)
@@ -100,5 +101,6 @@ backend/
 
 ## Testing locally with the frontend
 
-`npm run dev`, then open the frontend at `http://localhost:5173` in two browser windows (use a private window for the
-second player so it gets a separate `localStorage`).
+`npm run dev`, then in `frontend/` run `npx expo start` and press `w`. Open the web app in two browser windows
+(use a private window for the second player so it gets separate storage). To test with a real phone, run the server
+on your LAN and start the app with `EXPO_PUBLIC_SERVER_URL=http://<LAN-IP>:3000`.

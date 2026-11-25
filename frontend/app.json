@@ -1,0 +1,38 @@
+{
+  "expo": {
+    "name": "Codenames Pulp",
+    "slug": "codenames-pulp",
+    "version": "1.0.0",
+    "orientation": "portrait",
+    "icon": "./assets/icon.png",
+    "userInterfaceStyle": "automatic",
+    "ios": {
+      "supportsTablet": true,
+      "bundleIdentifier": "com.derbaliadem.codenamespulp"
+    },
+    "android": {
+      "adaptiveIcon": {
+        "backgroundColor": "#FFD23C",
+        "foregroundImage": "./assets/android-icon-foreground.png",
+        "backgroundImage": "./assets/android-icon-background.png",
+        "monochromeImage": "./assets/android-icon-monochrome.png"
+      },
+      "predictiveBackGestureEnabled": false,
+      "package": "com.derbaliadem.codenamespulp"
+    },
+    "web": {
+      "favicon": "./assets/favicon.png",
+      "name": "Codenames Pulp",
+      "shortName": "Codenames",
+      "themeColor": "#ffd23c",
+      "backgroundColor": "#f6e7a8",
+      "output": "single"
+    },
+    "plugins": [
+      "expo-font",
+      "expo-audio"
+    ],
+    "scheme": "codenamespulp",
+    "backgroundColor": "#f6e7a8"
+  }
+}

@@ -1,75 +1,71 @@
-# Codenames Pulp (online)
+# Codenames Pulp
 
-An online Codenames game in a pulp comic style. Two teams, a 5×5 board, one secret key.
-Friends open the site, one creates a room, the others join with a 5-letter code.
+An online Codenames game in a pulp comic style. It runs on **Android, iOS and the web**.
+Two teams, a 5×5 board, one secret key. One friend creates a room, the others join with a 5-letter code.
 
-It is built by **two AI agents working in parallel** in this one repository:
+It's built by **two AI agents working in parallel** in this one repository:
 
-| Part | Owner | Folder | Language / stack | Free hosting |
+| Part | Owner | Folder | Language / stack | Where it runs (free) |
 |---|---|---|---|---|
-| Frontend | **Frontend agent** | `frontend/` | Plain HTML + CSS + JavaScript (ES modules, no build step), Socket.IO client from CDN | **GitHub Pages** |
-| Backend | **Backend agent** | `backend/` | **Node.js 20 + TypeScript**, Express + **Socket.IO**, Vitest for tests | **Render** (free web service) |
+| App (frontend) | **Frontend agent** | `frontend/` | **TypeScript + React Native (Expo)**, one codebase for Android, iOS and web | Web on **GitHub Pages**, Android **APK** via EAS, iOS via **Expo Go** |
+| Server (backend) | **Backend agent** | `backend/` | **TypeScript + Node.js 20**, Express + **Socket.IO** | **Render** free web service |
 
-Everything is free: GitHub Pages is free for public repos, Render's free web service needs no credit card.
+Everything needed to play online is free. Publishing in the Google Play / Apple App Store is optional and costs
+$25 once / $99 a year. See [`docs/DEPLOY.md`](docs/DEPLOY.md).
 
 ## Start here
 
 Every agent reads these, in this order, before writing code:
 
-1. [`AGENTS.md`](AGENTS.md) – how the two agents collaborate (folders, branches, commits, pushing). **Mandatory.**
-2. [`docs/PROTOCOL.md`](docs/PROTOCOL.md) – the contract between frontend and backend. The single source of truth.
+1. [`AGENTS.md`](AGENTS.md) – how the two agents collaborate (ownership, pushing, commits). **Mandatory.**
+2. [`docs/PROTOCOL.md`](docs/PROTOCOL.md) – the contract between app and server. The single source of truth.
 3. [`docs/RULES.md`](docs/RULES.md) – the game rules the server enforces.
 4. Your own guide:
    - Frontend agent → [`docs/FRONTEND.md`](docs/FRONTEND.md)
    - Backend agent → [`docs/BACKEND.md`](docs/BACKEND.md)
-5. [`docs/DEPLOY.md`](docs/DEPLOY.md) – how it goes online for free.
+5. [`docs/DEPLOY.md`](docs/DEPLOY.md) – how it goes online.
+6. [`docs/STATUS.md`](docs/STATUS.md) – what each agent has done and needs.
 
 ## Architecture
 
 ```
- Browser (GitHub Pages)                         Render (Node.js)
- ┌────────────────────────┐   Socket.IO (wss)  ┌──────────────────────────┐
- │ frontend/index.html    │ ◀───────────────▶ │ backend/src/index.ts     │
- │  screens, animations,  │  events + acks     │  rooms in memory         │
- │  sound, theme          │  room:state pushes │  game rules (authority)  │
- └────────────────────────┘                    │  turn timer              │
-                                               └──────────────────────────┘
+ Android app ─┐
+ iOS app ─────┼── same React Native code ── Socket.IO (wss) ──▶ Node.js server on Render
+ Web browser ─┘   (frontend/)                 events + acks         (backend/)
+                                              room:state pushes      rooms in memory
+                                                                     game rules + timer
+                                                                     secret key
 ```
 
 * The **server is the authority**: it owns the board, the secret key, turns and the timer.
-  The key is only ever sent to spymasters (and to everyone when the game is over), so agents cannot cheat by reading the page.
-* The **frontend is a view**: it sends intents (`guess`, `clue:give` …) and renders whatever `room:state` the server pushes.
+  The key is only sent to spymasters (and to everyone after the game ends), so agents can't cheat.
+* The **app is a view**: it sends intents (`guess`, `clue:give` …) and renders whatever `room:state` the server pushes.
 
 ## Repository layout
 
 ```
 /
-├── README.md            this file
-├── AGENTS.md            collaboration rules for both agents
-├── CLAUDE.md            points agents to AGENTS.md
-├── render.yaml          Render blueprint for the backend
-├── .github/workflows/
-│   └── pages.yml        deploys frontend/ to GitHub Pages on push to main
+├── README.md, AGENTS.md, CLAUDE.md
+├── render.yaml                backend deploy blueprint (backend agent)
+├── .github/workflows/pages.yml   builds the web app and deploys it to GitHub Pages
 ├── docs/
-│   ├── PROTOCOL.md      frontend ⇄ backend contract
-│   ├── RULES.md         game rules
-│   ├── FRONTEND.md      frontend agent guide
-│   ├── BACKEND.md       backend agent guide
-│   ├── DEPLOY.md        free hosting setup
-│   └── STATUS.md        progress board both agents update
-├── frontend/            owned by the frontend agent
-│   └── prototype.html   original single-file design (visual reference, do not ship)
-└── backend/             owned by the backend agent
+│   ├── PROTOCOL.md  RULES.md  FRONTEND.md  BACKEND.md  DEPLOY.md  STATUS.md
+│   └── design/prototype.html  original single-file web design (visual reference only)
+├── frontend/                  React Native + Expo app (frontend agent)
+└── backend/                   Node.js server (backend agent)
 ```
 
 ## Run locally
 
 ```bash
-# terminal 1 – backend (http://localhost:3000)
+# terminal 1 – server on http://localhost:3000
 cd backend && npm install && npm run dev
 
-# terminal 2 – frontend (http://localhost:5173)
-cd frontend && npx serve -l 5173 .
+# terminal 2 – app
+cd frontend && npm install && npx expo start
+#   press w for the web version, a for an Android emulator, i for the iOS simulator (macOS),
+#   or scan the QR code with the free Expo Go app on your phone
 ```
 
-The frontend talks to `http://localhost:3000` automatically when opened on `localhost`.
+On a real phone, point the app at your computer:
+`EXPO_PUBLIC_SERVER_URL=http://<your-computer-LAN-IP>:3000 npx expo start`.

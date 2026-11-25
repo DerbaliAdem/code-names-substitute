@@ -1,6 +1,6 @@
 # Protocol – frontend ⇄ backend contract
 
-**Version: 1.0** · Transport: **Socket.IO v4** (WebSocket, polling fallback) · Encoding: JSON
+**Version: 1.1** · Transport: **Socket.IO v4** (WebSocket, polling fallback) · Encoding: JSON
 
 This file is the single source of truth. If the code and this file disagree, this file wins
 and the code gets fixed. To change it, follow `AGENTS.md` §4.
@@ -16,11 +16,14 @@ and the code gets fixed. To change it, follow `AGENTS.md` §4.
 | Socket.IO path | default (`/socket.io`) |
 | Health check | `GET /health` → `200 {"ok":true,"rooms":<number>,"uptime":<seconds>}` |
 
-On the frontend:
+Clients: one React Native (Expo) app that runs on **Android, iOS and web** (`frontend/src/net.ts`):
 
-```js
+```ts
 const socket = io(SERVER_URL, { transports: ['websocket', 'polling'] });
 ```
+
+Native Android and iOS clients send **no `Origin` header**. CORS only applies to the web build, so the server must not
+reject connections that have no `Origin`.
 
 The free Render instance **sleeps after 15 minutes idle** and takes about 30–60 s to wake up.
 The frontend should call `GET /health` on page load to start waking it, and show a "Waking the server…" state until the socket connects.
@@ -52,7 +55,7 @@ including the sender. The frontend renders from `room:state` only. Don't update 
 ## 3. Identity and reconnection
 
 * There are no accounts. When a player creates or joins a room, the server issues a `playerId` and a secret `token`.
-* The frontend stores `{ code, playerId, token }` in `localStorage` under key `cnSession`.
+* The app stores `{ code, playerId, token }` in AsyncStorage (localStorage on web) under key `cnSession`.
 * On page load or socket reconnect, if `cnSession` exists, the frontend sends `room:join` with the same `code` and `token`.
   The server then reattaches the socket to the **same player** (same seat, same team) instead of creating a new one.
 * A player whose socket disconnects stays in the room with `connected: false`. The server removes them
@@ -196,3 +199,4 @@ all: ← room:event {kind:'reveal', data:{index:12, type:'r'}}, room:state
 ## Changelog
 
 * **1.0** – initial contract.
+* **1.1** – clients are now a React Native app (Android, iOS, web). Native clients have no `Origin` header. No payload changes.

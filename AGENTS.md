@@ -3,8 +3,8 @@
 Two agents build this project at the same time in the same GitHub repository
 (`https://github.com/DerbaliAdem/code-names-substitute`):
 
-* **Frontend agent** – owns `frontend/` and `.github/workflows/pages.yml`.
-* **Backend agent** – owns `backend/` and `render.yaml`.
+* **Frontend agent** – owns `frontend/` (React Native + Expo app, TypeScript) and `.github/workflows/pages.yml`.
+* **Backend agent** – owns `backend/` (Node.js + TypeScript server) and `render.yaml`.
 
 You can't talk to each other directly. **The repository is your only communication channel**,
 so everything you decide has to be committed and pushed.
@@ -39,7 +39,7 @@ Pushing small and often is the whole point: the other agent can only see your wo
   git push origin main
   ```
 * If `push` is rejected, `pull --rebase` and push again. Never `push --force` to `main`.
-* Never commit secrets, `node_modules/`, `dist/` or `.env` files.
+* Never commit secrets, `node_modules/`, `dist/`, `.expo/` or `.env` files. Do commit `package-lock.json`.
 
 ## 3. Commit messages
 
@@ -78,6 +78,6 @@ Read the other agent's section **every time you pull**.
 ## 6. Definition of done
 
 * **Backend:** `npm run build` and `npm test` pass; every event in `PROTOCOL.md` is implemented with its acks and errors.
-* **Frontend:** works against the local backend in two browser windows (two players), and in the deployed version;
-  no console errors; usable at 360px width; dark and light themes both readable.
+* **Frontend:** `npm run typecheck` and `npm run build:web` pass; a full game works against the local backend with two
+  windows/devices; checked on web plus Android emulator, iOS simulator or Expo Go; usable at 360px width; light and dark themes readable.
 * `docs/STATUS.md` is updated, and everything is committed **and pushed**.

@@ -1,0 +1,15 @@
+{
+  "cli": { "version": ">= 16.0.0", "appVersionSource": "remote" },
+  "build": {
+    "preview": {
+      "distribution": "internal",
+      "android": { "buildType": "apk" },
+      "env": { "EXPO_PUBLIC_SERVER_URL": "https://codenames-pulp-api.onrender.com" }
+    },
+    "production": {
+      "autoIncrement": true,
+      "env": { "EXPO_PUBLIC_SERVER_URL": "https://codenames-pulp-api.onrender.com" }
+    }
+  },
+  "submit": { "production": {} }
+}

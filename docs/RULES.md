@@ -1,7 +1,8 @@
 # Game rules (enforced by the server)
 
-These match the original prototype (`frontend/prototype.html`). The backend implements them as pure
-functions in `backend/src/game.ts`, and the frontend uses them only to explain what's happening.
+These match the original design (`docs/design/prototype.html`). The backend implements them as pure
+functions in `backend/src/game.ts`. The React Native app (`frontend/`) never enforces them; it only explains
+them (Rules screen, disabled buttons, error messages from the server).
 
 ## Setup
 * 25 words drawn at random from the word list (`backend/src/words.ts`, at least 400 words, all UPPERCASE, single words).
@@ -9,7 +10,7 @@ functions in `backend/src/game.ts`, and the frontend uses them only to explain w
 * Use a proper Fisher–Yates shuffle with `crypto.randomInt`, not `sort(() => Math.random() - .5)`.
 
 ## Teams
-* Two teams, red (`r`, shown with ▲ and stripes) and blue (`b`, ● and dots).
+* Two teams, red (`r`, always shown with ▲) and blue (`b`, always shown with ●). Neutral is –, the assassin is ✖, so colour is never the only clue.
 * Each team needs exactly **1 spymaster** and **at least 1 agent** before the host can start.
 
 ## A turn
