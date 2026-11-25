@@ -16,7 +16,7 @@ export const FONT = {
 };
 
 export const COLORS = ['#e03a2e', '#2a6bd6', '#2e9e5b', '#8a4fd0', '#e08a1e'];
-export const BADGES = ['★', '⚡', '☾', '✦', '◆', '☀', '♠', '✿', '⚓', '♫', '☂', '⚙', '♥', '♣', '✪', '☘', '✧', '♦', '⚔', '⚗', '✈'];
+export const BADGES = ['★', '☾', '✦', '◆', '☀', '♠', '⚓', '♫', '☂', '⚙', '♣', '✪', '✧'];
 export const ALIASES = ['The Falcon', 'Night Owl', 'Red Fox', 'Quiet Wolf', 'Iron Mole'];
 
 export function useTheme(): { c: Palette; dark: boolean } {
