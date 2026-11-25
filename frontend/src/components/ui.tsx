@@ -2,6 +2,7 @@
 import React from 'react';
 import { Pressable, StyleSheet, Text, TextInput, View, type StyleProp, type TextInputProps, type TextStyle, type ViewStyle } from 'react-native';
 import { FONT, INK, useTheme } from '../theme';
+import { Hero } from './Hero';
 
 /** Hard offset shadow that looks the same on iOS, Android and web. */
 export function Inked({ offset = 5, shadow, style, children, rotate }: { offset?: number; shadow?: string; style?: StyleProp<ViewStyle>; children: React.ReactNode; rotate?: string }) {
@@ -91,14 +92,11 @@ export function Tag({ children }: { children: React.ReactNode }) {
 export const initial = (name: string) => ([...name][0] ?? '?').toUpperCase();
 
 export function Avatar({ name, color, badge, small }: { name: string; color: string; badge: string; small?: boolean }) {
-  const size = small ? 34 : 56;
-  const em = small ? 16 : 22;
+  const size = small ? 38 : 60;
+  const bw = small ? 2 : 3;
   return (
-    <Inked offset={small ? 2 : 3} rotate="-3deg" style={{ width: size, height: size, backgroundColor: /^#[0-9a-f]{6}$/i.test(color) ? color : '#888', borderWidth: small ? 2 : 3, borderColor: INK, alignItems: 'center', justifyContent: 'center' }}>
-      <Text style={{ fontFamily: FONT.display, fontSize: small ? 18 : 28, color: '#fff' }}>{initial(name)}</Text>
-      <View style={{ position: 'absolute', right: -7, bottom: -7, width: em, height: em, backgroundColor: '#ffd23c', borderWidth: 2, borderColor: INK, alignItems: 'center', justifyContent: 'center' }}>
-        <Text style={{ fontSize: small ? 9 : 13, color: INK }}>{badge}</Text>
-      </View>
+    <Inked offset={small ? 2 : 3} rotate="-3deg" style={{ width: size, height: size, borderWidth: bw, borderColor: INK }}>
+      <Hero badge={badge} color={color} size={size - 2 * bw} />
     </Inked>
   );
 }

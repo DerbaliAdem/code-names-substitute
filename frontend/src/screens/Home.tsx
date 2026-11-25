@@ -1,7 +1,8 @@
 // Home = "agent dossier": your agent file card, one big start button, room code in 5 letter boxes.
 import React, { useEffect, useRef, useState } from 'react';
 import { Pressable, Text, TextInput, View } from 'react-native';
-import { Btn, Cap, Inked, initial, Note, Panel } from '../components/ui';
+import { Btn, Cap, Inked, Note, Panel } from '../components/ui';
+import { Hero, heroFor } from '../components/Hero';
 import { enterRoom, request } from '../net';
 import { getState, go, setProfile, setState, useApp } from '../store';
 import { ALIASES, BADGES, COLORS, FONT, INK, useTheme } from '../theme';
@@ -28,11 +29,8 @@ function Dossier() {
       </View>
       <Panel>
         <View style={{ flexDirection: 'row', gap: 16, alignItems: 'center' }}>
-          <Inked offset={3} rotate="-3deg" style={{ width: 84, height: 96, backgroundColor: p.color, borderWidth: 3, borderColor: INK, alignItems: 'center', justifyContent: 'center' }}>
-            <Text style={{ fontFamily: FONT.display, fontSize: 52, color: '#fff' }}>{initial(name)}</Text>
-            <View style={{ position: 'absolute', right: -10, bottom: -10, width: 28, height: 28, backgroundColor: '#ffd23c', borderWidth: 2, borderColor: INK, alignItems: 'center', justifyContent: 'center' }}>
-              <Text style={{ fontSize: 15, color: INK }}>{p.badge}</Text>
-            </View>
+          <Inked offset={3} rotate="-3deg" style={{ width: 96, height: 96, borderWidth: 3, borderColor: INK }}>
+            <Hero badge={p.badge} color={p.color} size={90} />
           </Inked>
           <View style={{ flex: 1, gap: 4 }}>
             <Cap>Code name</Cap>
@@ -48,12 +46,17 @@ function Dossier() {
             <Pressable key={col} accessibilityRole="radio" accessibilityLabel={'Colour ' + col} accessibilityState={{ checked: p.color === col }} onPress={() => setProfile({ color: col })} style={[sw(p.color === col), { backgroundColor: col }]} />
           ))}
         </View>
+        <Cap>Your hero: {heroFor(p.badge).name}</Cap>
         <View accessibilityRole="radiogroup" style={{ flexDirection: 'row', flexWrap: 'wrap', gap: 6 }}>
-          {BADGES.map((b) => (
-            <Pressable key={b} accessibilityRole="radio" accessibilityLabel={'Badge ' + b} accessibilityState={{ checked: p.badge === b }} onPress={() => setProfile({ badge: b })} style={[sw(p.badge === b), { backgroundColor: c.panel }]}>
-              <Text style={{ fontSize: 15, color: c.ink }}>{b}</Text>
-            </Pressable>
-          ))}
+          {BADGES.map((b) => {
+            const on = p.badge === b;
+            return (
+              <Pressable key={b} accessibilityRole="radio" accessibilityLabel={heroFor(b).name} accessibilityState={{ checked: on }} onPress={() => setProfile({ badge: b })}
+                style={{ borderWidth: on ? 4 : 2, borderColor: on ? c.red : INK, transform: on ? [{ rotate: '-4deg' }, { scale: 1.08 }] : undefined }}>
+                <Hero badge={b} color={p.color} size={on ? 40 : 44} />
+              </Pressable>
+            );
+          })}
         </View>
       </Panel>
     </View>
