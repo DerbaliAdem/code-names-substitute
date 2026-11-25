@@ -39,10 +39,12 @@ export interface Room {
   emptySince: number | null;
 }
 
+/** Runs a callback later and returns a function that cancels it. */
+export type Schedule = (run: () => void, ms: number) => () => void;
+
 export interface RoomStoreOptions {
   now?: () => number;
-  /** Runs a callback later and returns a function that cancels it. */
-  schedule?: (run: () => void, ms: number) => () => void;
+  schedule?: Schedule;
   makeCode?: () => string;
   /** Called after the turn clock ended a turn. */
   onTimeout?: (room: Room) => void;
@@ -59,17 +61,17 @@ function randomString(alphabet: string, length: number): string {
   return Array.from({ length }, () => alphabet[randomInt(alphabet.length)]).join('');
 }
 
-function realSchedule(run: () => void, ms: number): () => void {
+export const realSchedule: Schedule = (run, ms) => {
   const timer = setTimeout(run, ms);
   return () => clearTimeout(timer);
-}
+};
 
 const isConnected = (player: PlayerInternal) => player.sockets.size > 0;
 
 export class RoomStore {
   private readonly rooms = new Map<string, Room>();
   private readonly now: () => number;
-  private readonly schedule: (run: () => void, ms: number) => () => void;
+  private readonly schedule: Schedule;
   private readonly makeCode: () => string;
   private readonly onTimeout: (room: Room) => void;
   private readonly maxRooms: number;
@@ -90,6 +92,11 @@ export class RoomStore {
 
   get(code: string): Room | undefined {
     return this.rooms.get(code);
+  }
+
+  /** Looks a room up by a code as typed by a person. */
+  find(typedCode: string): Room | undefined {
+    return this.rooms.get(typedCode.toUpperCase().replace(/[^A-Z0-9]/g, ''));
   }
 
   // ── membership ────────────────────────────────────────────────────────────
@@ -118,8 +125,7 @@ export class RoomStore {
   }
 
   join(rawCode: string, profile: Profile, socketId: string, token?: string): Membership {
-    const code = rawCode.toUpperCase().replace(/[^A-Z0-9]/g, '');
-    const room = this.rooms.get(code);
+    const room = this.find(rawCode);
     if (!room) throw new GameError('ROOM_NOT_FOUND', 'There is no room with that code.');
 
     let player = token === undefined ? undefined : [...room.players.values()].find((p) => p.token === token);
