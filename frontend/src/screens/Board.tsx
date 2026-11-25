@@ -25,7 +25,7 @@ const CARD_NAME: Record<Card, string> = { r: 'red', b: 'blue', n: 'neutral', x: 
 
 function cardStyle(c: Palette, t: Card | undefined, revealed: boolean) {
   if (!t) return { bg: c.panel, fg: c.ink, stripe: null as string | null };
-  if (revealed) return { bg: { r: c.red, b: c.blue, n: c.tan, x: INK }[t], fg: t === 'n' ? (c.tan === '#d9c79a' ? INK : c.ink) : t === 'x' ? '#ffd23c' : '#fff', stripe: null };
+  if (revealed) return { bg: { r: c.red, b: c.blue, n: '#fbf6e6', x: INK }[t], fg: t === 'n' ? INK : t === 'x' ? '#ffd23c' : '#fff', stripe: null };
   // Spymaster key view (unrevealed)
   if (t === 'x') return { bg: INK, fg: '#ffd23c', stripe: null };
   if (t === 'n') return { bg: c.tan, fg: c.tan === '#d9c79a' ? INK : c.ink, stripe: null };
@@ -99,6 +99,17 @@ function WordCard({ v, i, canGuess, size, inner, onError }: { v: RoomView; i: nu
           <Animated.View style={{ flex: 1, transform: [{ translateX: shake }, { scaleX: flip }] }}>
             <View style={{ flex: 1, backgroundColor: st.bg, borderWidth: 3, borderColor: c.ink, alignItems: 'center', justifyContent: 'center', padding: 2, overflow: 'hidden', transform: (r && shown) || pressed || busy ? [{ translateX: 3 }, { translateY: 3 }] : undefined }}>
               {st.stripe && <View style={{ position: 'absolute', top: 0, left: 0, right: 0, height: 7, backgroundColor: st.stripe }} />}
+              {r && shown && r.type === 'n' && (
+                // A picked white card stays remarkable: hatched paper + a tape in the colour of the team that picked it.
+                <View pointerEvents="none" style={{ position: 'absolute', left: 0, top: 0, right: 0, bottom: 0 }}>
+                  {[-60, -30, 0, 30, 60, 90, 120].map((x) => (
+                    <View key={x} style={{ position: 'absolute', top: -20, bottom: -20, left: `${x}%`, width: 5, backgroundColor: '#16130e1f', transform: [{ rotate: '35deg' }] }} />
+                  ))}
+                  <View style={{ position: 'absolute', left: -6, right: -6, bottom: '9%', backgroundColor: r.team === 'r' ? c.red : c.blue, borderTopWidth: 2, borderBottomWidth: 2, borderColor: INK, transform: [{ rotate: '-6deg' }], alignItems: 'center' }}>
+                    <Text style={{ fontFamily: FONT.display, fontSize: Math.max(8, Math.min(14, inner / 9)), letterSpacing: 1, color: '#fff' }}>{TEAM[r.team].g} BYSTANDER</Text>
+                  </View>
+                </View>
+              )}
               {t && <Text style={{ position: 'absolute', left: 3, top: st.stripe ? 8 : 1, fontSize: size * 0.8, color: st.stripe ?? st.fg }}>{MARK[t]}</Text>}
               <Text numberOfLines={1} style={{ fontFamily: r && shown ? FONT.display : FONT.bold, fontSize: fit, lineHeight: Math.round(fit * 1.15), textTransform: rtl ? 'none' : 'uppercase', writingDirection: rtl ? 'rtl' : 'ltr', color: st.fg, textAlign: 'center', letterSpacing: rtl ? 0 : 0.5 }}>{word}</Text>
             </View>
