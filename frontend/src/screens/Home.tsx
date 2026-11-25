@@ -47,7 +47,7 @@ function Dossier() {
             <Pressable key={col} accessibilityRole="radio" accessibilityLabel={'Colour ' + col} accessibilityState={{ checked: p.color === col }} onPress={() => setProfile({ color: col })} style={[sw(p.color === col), { backgroundColor: col }]} />
           ))}
         </View>
-        <Cap>Your hero: {heroFor(p.badge).name}</Cap>
+        <Cap>Your gear: {heroFor(p.badge).name}</Cap>
         <View accessibilityRole="radiogroup" style={{ flexDirection: 'row', flexWrap: 'wrap', gap: 6 }}>
           {BADGES.map((b) => {
             const on = p.badge === b;
