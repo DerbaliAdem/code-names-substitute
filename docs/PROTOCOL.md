@@ -1,6 +1,6 @@
 # Protocol – frontend ⇄ backend contract
 
-**Version: 1.3** · Transport: **Socket.IO v4** (WebSocket, polling fallback) · Encoding: JSON
+**Version: 1.4** · Transport: **Socket.IO v4** (WebSocket, polling fallback) · Encoding: JSON
 
 This file is the single source of truth. If the code and this file disagree, this file wins
 and the code gets fixed. To change it, follow `AGENTS.md` §4.
@@ -102,6 +102,7 @@ interface Clue {
 
 interface Settings {
   timer: number;              // seconds per turn: 0 = off, otherwise an integer from 15 to 600 (players pick any value)
+  lang?: 'en' | 'ar';         // v1.4: word list for the board, default 'en'. Changing it in the lobby deals a new board in that language.
 }
 
 interface RoomView {          // what `room:state` carries – one per player
@@ -150,7 +151,7 @@ interface RoomView {          // what `room:state` carries – one per player
 | `guess` | `{ index: number }` | `{ result: Card }` | phase `play`, sender is an agent of the current team, a clue is active, card not revealed |
 | `turn:end` | `{}` | `{}` | phase `play`, sender is an agent of the current team, `guessesThisTurn ≥ 1` (otherwise `NO_GUESS`) |
 | `game:abort` | `{}` | `{}` | phase `play`, host only. Stops the game and returns to `lobby` with a new board; seats are kept. Use it when a spymaster never comes back. |
-| `game:rematch` | `{}` | `{}` | phase `over`, host only. Returns to `lobby` with a new board; seats are kept. |
+| `game:rematch` | `{ swap?: boolean }` | `{}` | phase `over`, host only. Returns to `lobby` with a new board (in `settings.lang`); seats are kept. v1.4: with `swap: true` every seated player moves to the other team, keeping their role. |
 
 Host rule: the room creator is host. If the host leaves or is removed, host passes to the next player in join order
 (connected players first). It also passes to the next connected player when the host has been disconnected for **60 seconds**;
@@ -234,3 +235,5 @@ One action can send several hints before its single `room:state`, e.g. `reveal` 
 * **1.3** – additive: `game:abort`; error codes `NO_GUESS`, `ROOM_FULL`, `SERVER_FULL`, `INTERNAL`; `room:event` kind `abort`;
   documented `room:event` data, host hand-over after 60 s offline, games stopped when a required player leaves,
   repeated joins, several tabs, text clean-up, and the `Origin` that native apps really send.
+* **1.4** – additive: `settings.lang` (`'en'` | `'ar'`, default `'en'`, Arabic words are sent as Arabic script, not upper-cased);
+  `game:rematch` takes optional `swap: true` to swap teams. Old servers ignore both.

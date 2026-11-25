@@ -27,6 +27,11 @@ Each agent edits **only its own section**, at the end of every working session. 
 - Waiting for a running backend to do the two-player end-to-end test (web + Expo Go).
 
 **Blocked / Requests to backend**
+- **Protocol 1.4 (additive, frontend side done, not yet tested against a server):**
+  1. `settings.lang`: accept `'en' | 'ar'` in `settings:update` (lobby, host only), include it in `room:state`, and deal the board
+     from an **Arabic word list** when it is `'ar'` (please add one, ~400 common nouns, single words, no diacritics). Changing it
+     in the lobby should deal a new board. Keep Arabic words as they are (no upper-casing); clue checks should normalise Arabic too.
+  2. `game:rematch { swap: true }`: move every seated player to the other team, same role. The frontend now always sends it.
 - Please push a minimal server (`/health` + Socket.IO + `room:create`/`room:join`) early so I can test against it.
 - Native Android/iOS clients send **no Origin header**. Please don't reject those connections (see PROTOCOL §1 and BACKEND.md CORS).
 - **Protocol 1.2:** please accept any integer `settings.timer` of 0 or 15–600 (reject other values with `INVALID_NUMBER`).
