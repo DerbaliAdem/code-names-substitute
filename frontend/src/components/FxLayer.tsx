@@ -57,7 +57,9 @@ function ClueFx({ fx, done }: { fx: Extract<Fx, { kind: 'clue' }>; done: () => v
   const bubbleW = Math.min(width - 32, 760);
   const inner = bubbleW - 10 /* shadow */ - 12 /* borders */ - 2 * 22 /* padding */;
   const perChar = 0.56;                    // Bangers glyph width ≈ 0.5em, plus letter spacing and shadow
-  const wordSize = Math.floor(Math.max(26, Math.min(120, inner / (Math.max(3, cl.word.length) * perChar + 0.3))));
+  // +0.6em: room for the italic lean and the hard shadow of the last letter (they draw past the glyph box)
+  const wordSize = Math.floor(Math.max(26, Math.min(120, inner / (Math.max(3, cl.word.length) * perChar + 0.6))));
+  const lean = Math.ceil(wordSize * 0.22);
   return (
     <View style={fill} accessibilityLiveRegion="assertive" accessibilityLabel={`${TEAM[cl.team].n} spymaster says ${cl.word}, ${cl.number === 0 ? 'unlimited' : cl.number}`}>
       <Animated.View style={[fill, { backgroundColor: 'rgba(22,19,14,0.8)', opacity: a.interpolate({ inputRange: [0, 1, 2], outputRange: [0, 1, 0] }) }]} />
@@ -67,7 +69,7 @@ function ClueFx({ fx, done }: { fx: Extract<Fx, { kind: 'clue' }>; done: () => v
           <View style={{ position: 'absolute', left: 10, top: 10, right: -10, bottom: -10, backgroundColor: INK, borderRadius: 48 }} />
           <View style={{ backgroundColor: '#fff', borderWidth: 6, borderColor: INK, borderRadius: 48, paddingVertical: Math.max(18, Math.min(40, height * 0.04)), paddingHorizontal: 22, alignItems: 'center', gap: 4 }}>
             <Text style={{ fontFamily: FONT.bold, fontSize: 18, letterSpacing: 2.5, color: team, textTransform: 'uppercase', textAlign: 'center' }}>{TEAM[cl.team].g} {TEAM[cl.team].n} spymaster says</Text>
-            <Text numberOfLines={1} style={[comic(wordSize, INK, team, Math.max(2, Math.round(wordSize / 22))), { letterSpacing: 1, lineHeight: Math.round(wordSize * 1.1) }]}>{cl.word}</Text>
+            <Text numberOfLines={1} style={[comic(wordSize, INK, team, Math.max(2, Math.round(wordSize / 22))), { letterSpacing: 1, lineHeight: Math.round(wordSize * 1.1), paddingHorizontal: lean }]}>{cl.word}</Text>
             <View style={{ marginTop: 6, backgroundColor: team, borderWidth: 4, borderColor: INK, paddingHorizontal: 22, transform: [{ rotate: '4deg' }] }}>
               <Text style={comic(Math.max(36, Math.min(72, Math.round(wordSize * 0.6))), '#fff', INK, 3)}>{cl.number === 0 ? '∞' : cl.number}</Text>
             </View>
