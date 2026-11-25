@@ -6,7 +6,7 @@ You own `backend/` and `render.yaml`. Read `AGENTS.md`, `docs/PROTOCOL.md` and `
 
 | Concern | Choice |
 |---|---|
-| Runtime | **Node.js 20 LTS** |
+| Runtime | **Node.js 22 LTS** (20 reached end of life in April 2026) |
 | Language | **TypeScript** (strict mode), compiled with `tsc` to `dist/` |
 | HTTP | Express 4 (only `/health` and `/`) |
 | Realtime | **Socket.IO 4** |
@@ -16,17 +16,26 @@ You own `backend/` and `render.yaml`. Read `AGENTS.md`, `docs/PROTOCOL.md` and `
 | Storage | **In memory** (a `Map<code, Room>`), no database. Rooms are short-lived; a restart just ends running games. |
 | Hosting | **Render free web service** (see `docs/DEPLOY.md`) |
 
-## Folder layout to create
+## Folder layout
 
 ```
 backend/
 ├── package.json
-├── tsconfig.json
+├── tsconfig.json         type-checks everything; tsconfig.build.json compiles src/ to dist/
+├── eslint.config.js
 ├── vitest.config.ts
+├── .env.example
 ├── .gitignore            node_modules, dist, .env
+├── scripts/load.ts       load test
 ├── src/
-│   ├── index.ts          Express + Socket.IO bootstrap, CORS, /health, PORT
-│   ├── config.ts         env: PORT (default 3000), CORS_ORIGIN (comma list)
+│   ├── index.ts          process entry: signals, crash handling
+│   ├── server.ts         wires HTTP, Socket.IO, rooms, housekeeping; start/stop
+│   ├── http.ts           /health and /, headers, CORS
+│   ├── config.ts         validated env (see .env.example)
+│   ├── clientIp.ts       rate-limit key of a connection
+│   ├── origin.ts         which origins may connect
+│   ├── rateLimit.ts      token buckets
+│   ├── logger.ts         JSON lines
 │   ├── types.ts          the types from PROTOCOL.md §4, copied exactly
 │   ├── schemas.ts        zod schemas for every client payload
 │   ├── words.ts          ≥ 400 UPPERCASE single words
@@ -38,7 +47,12 @@ backend/
 └── test/
     ├── game.test.ts      rules: clue validation, guess limits, assassin, cleared, turn end
     ├── view.test.ts      key hidden from agents/spectators, shown to spymasters and after game over
-    └── socket.test.ts    two-client end-to-end: create, join, seats, start, clue, guess
+    ├── rooms.test.ts     membership, host, seats, turn clock, clean-up
+    ├── schemas.test.ts   payload validation
+    ├── config.test.ts    env and rate limiters
+    ├── socket.test.ts    multi-client end-to-end: rooms, lobby, whole games, clock
+    ├── server.test.ts    HTTP, origins, limits, hostile clients, shutdown
+    └── process.test.ts   the real process: health, bad config, port taken, SIGTERM
 ```
 
 `package.json` scripts:
@@ -46,12 +60,13 @@ backend/
 ```json
 {
   "scripts": {
-    "dev": "tsx watch src/index.ts",
-    "build": "tsc -p tsconfig.json",
+    "dev": "tsx watch --env-file-if-exists=.env src/index.ts",
+    "build": "tsc -p tsconfig.build.json",
     "start": "node dist/index.js",
-    "test": "vitest run"
+    "test": "vitest run",
+    "check": "npm run lint && npm run typecheck && npm run build && npm test"
   },
-  "engines": { "node": ">=20" }
+  "engines": { "node": ">=22.12" }
 }
 ```
 
@@ -60,12 +75,16 @@ backend/
 1. **Server-side state model** (internal, not sent as is):
    ```ts
    interface Room {
-     code: string; hostId: string; phase: Phase; settings: Settings;
-     players: Map<string, PlayerInternal>;   // PlayerInternal = Player + token + socketIds:Set + lastSeen
-     words: string[]; key: Card[]; first: Team; turn: Team; turnNo: number;
-     clue: Clue | null; guessesThisTurn: number; turnEndsAt: number | null;
+     code: string; hostId: string; settings: Settings;
+     players: Map<string, PlayerInternal>;   // PlayerInternal = Player + token + sockets:Set + lastSeen
+     game: GameState;                        // immutable; replaced only through RoomStore.setGame (keeps the clock in step)
+     turnEndsAt: number | null; cancelTimer: (() => void) | null;
+     createdAt: number; emptySince: number | null;
+   }
+   interface GameState {                     // pure, from game.ts
+     phase: Phase; words: string[]; key: Card[]; first: Team; turn: Team; turnNo: number;
+     clue: Clue | null; guessesThisTurn: number;
      revealed: Map<number, Reveal>; log: Clue[]; over: RoomView['over'];
-     timer: NodeJS.Timeout | null; createdAt: number; emptySince: number | null;
    }
    ```
 2. **Broadcasting:** after every mutation call `broadcast(room)`, which loops over the players and sends each of
@@ -77,14 +96,16 @@ backend/
    Player ids: `p_` + 8 random chars.
 5. **Timer:** a single `setTimeout` per room set to `turnEndsAt`. Clear it and set it again on every turn change. On fire: end the turn,
    emit `room:event {kind:'timeout'}`, broadcast.
-6. **Cleanup:** every 60 s, delete rooms that have had no connected player for 30 minutes (emit `room:closed`), and in the lobby,
+6. **Cleanup:** every 15 s, pass on the host role of hosts offline for 60 s, delete rooms that have had no connected player for 30 minutes (emit `room:closed`), and in the lobby,
    remove players who have been disconnected for more than 10 minutes.
 7. **Validation:** each handler runs `schema.safeParse(payload)`, and on failure acks `BAD_REQUEST`. If the ack callback
    is missing, do nothing and never throw. Wrap every handler in try/catch → `toAck(err)`.
-8. **Rate limit:** a simple per-socket token bucket, 20 events per second → `RATE_LIMITED`.
+8. **Rate limit:** a per-socket token bucket, 20 events per second → `RATE_LIMITED` (200 in a row disconnect), plus
+   per-address limits on room creation and wrong codes.
 9. **CORS:** `new Server(http, { cors: { origin: config.corsOrigins } })`. Allow the GitHub Pages origin
    (`https://derbaliadem.github.io`) and the Expo web dev server (`http://localhost:8081`) by default.
-   The Android and iOS apps send **no Origin header**, so never reject a connection just because Origin is missing.
+   CORS doesn't cover WebSocket, so `allowRequest` checks the origin too (`origin.ts`). Native apps send no Origin, or the
+   server's own address on React Native WebSockets: both must be accepted.
 10. **`/health`:** returns `{ ok: true, rooms, uptime }`. Render uses it as the health check, and the frontend uses it to wake the server.
 
 ## Order of work (commit + push after each)

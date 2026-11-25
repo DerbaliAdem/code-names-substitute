@@ -1,6 +1,6 @@
 # Protocol – frontend ⇄ backend contract
 
-**Version: 1.2** · Transport: **Socket.IO v4** (WebSocket, polling fallback) · Encoding: JSON
+**Version: 1.3** · Transport: **Socket.IO v4** (WebSocket, polling fallback) · Encoding: JSON
 
 This file is the single source of truth. If the code and this file disagree, this file wins
 and the code gets fixed. To change it, follow `AGENTS.md` §4.
@@ -22,8 +22,8 @@ Clients: one React Native (Expo) app that runs on **Android, iOS and web** (`fro
 const socket = io(SERVER_URL, { transports: ['websocket', 'polling'] });
 ```
 
-Native Android and iOS clients send **no `Origin` header**. CORS only applies to the web build, so the server must not
-reject connections that have no `Origin`.
+CORS only applies to the web build. Native HTTP requests send **no `Origin` header**, but React Native WebSockets send the
+**server's own address** as `Origin`. The server accepts both, and refuses web pages from origins that aren't in `CORS_ORIGIN`.
 
 The free Render instance **sleeps after 15 minutes idle** and takes about 30–60 s to wake up.
 The frontend should call `GET /health` on page load to start waking it, and show a "Waking the server…" state until the socket connects.
@@ -148,10 +148,22 @@ interface RoomView {          // what `room:state` carries – one per player
 | `game:start` | `{}` | `{}` | phase `lobby`, host only, each team has exactly 1 spymaster and ≥ 1 agent |
 | `clue:give` | `{ word: string, number: number }` | `{}` | phase `play`, sender is the current team's spymaster, no active clue |
 | `guess` | `{ index: number }` | `{ result: Card }` | phase `play`, sender is an agent of the current team, a clue is active, card not revealed |
-| `turn:end` | `{}` | `{}` | phase `play`, sender is an agent of the current team, `guessesThisTurn ≥ 1` |
+| `turn:end` | `{}` | `{}` | phase `play`, sender is an agent of the current team, `guessesThisTurn ≥ 1` (otherwise `NO_GUESS`) |
+| `game:abort` | `{}` | `{}` | phase `play`, host only. Stops the game and returns to `lobby` with a new board; seats are kept. Use it when a spymaster never comes back. |
 | `game:rematch` | `{}` | `{}` | phase `over`, host only. Returns to `lobby` with a new board; seats are kept. |
 
-Host rule: the room creator is host. If the host leaves or is removed, host passes to the next player in join order.
+Host rule: the room creator is host. If the host leaves or is removed, host passes to the next player in join order
+(connected players first). It also passes to the next connected player when the host has been disconnected for **60 seconds**;
+a returning host doesn't get it back.
+
+Leaving during play: if a `room:leave` leaves a team without a spymaster or without agents, the game can't go on, so the server
+stops it and returns to `lobby` with a new board (`room:event {kind:'abort', data:{reason}}`). A mere disconnection doesn't do this.
+
+Joining: `room:join` for the room the socket is already in (without another player's token) returns the same player. A player may have
+several sockets (tabs); `room:leave` in one of them sends `room:closed` to the others. A failed join keeps the current room.
+
+Payloads: where the payload is `{}` it may be omitted. Text fields are trimmed and stripped of control and invisible characters;
+over-long text is refused with `BAD_REQUEST`. A clue is at most 32 characters.
 
 ## 6. Server → client events
 
@@ -159,7 +171,7 @@ Host rule: the room creator is host. If the host leaves or is removed, host pass
 |---|---|---|
 | `room:state` | `RoomView` | after every change, and right after a successful create or join |
 | `room:closed` | `{ reason: string }` | the room was deleted (e.g. empty too long). The client clears `cnSession` and goes home. |
-| `room:event` | `{ kind: 'reveal' \| 'clue' \| 'turn' \| 'timeout' \| 'start' \| 'over', data?: object }` | optional hint for sounds and animations, sent just before the matching `room:state`. The frontend must also work without it. |
+| `room:event` | `{ kind: 'reveal' \| 'clue' \| 'turn' \| 'timeout' \| 'start' \| 'over' \| 'abort', data?: object }` | optional hint for sounds and animations, sent just before the matching `room:state`. The frontend must also work without it. |
 
 ## 7. Error codes
 
@@ -178,7 +190,11 @@ Host rule: the room creator is host. If the host leaves or is removed, host pass
 | `INVALID_CLUE` | empty, more than one word, or it matches a board word (message says why) |
 | `INVALID_NUMBER` | clue number out of 0–9 or greater than the team's remaining cards, or timer not 0 or 15–600 |
 | `ALREADY_REVEALED` | card already revealed |
-| `RATE_LIMITED` | more than 20 events per second from one socket |
+| `NO_GUESS` | `turn:end` before any correct guess this turn |
+| `ROOM_FULL` | the room has no space for another player (20 by default) |
+| `SERVER_FULL` | the server can't host another room right now |
+| `INTERNAL` | unexpected server error |
+| `RATE_LIMITED` | more than 20 events per second from one socket, or too many rooms created or wrong codes tried |
 
 ## 8. Example flow
 
@@ -196,8 +212,25 @@ redAgent: guess {index:12}             → ack {ok, result:'r'}
 all: ← room:event {kind:'reveal', data:{index:12, type:'r'}}, room:state
 ```
 
+## 9. `room:event` data
+
+| `kind` | `data` |
+|---|---|
+| `start` | `{ first: Team }` |
+| `clue` | `Clue` |
+| `reveal` | `{ index: number, type: Card }` |
+| `turn` | `{ turn: Team, turnNo: number }` – the turn passed after a guess or `turn:end` |
+| `timeout` | `{ turn: Team, turnNo: number }` – the turn passed because time ran out |
+| `over` | same as `RoomView.over` |
+| `abort` | `{ reason: string }` |
+
+One action can send several hints before its single `room:state`, e.g. `reveal` then `turn`, or `reveal` then `over`.
+
 ## Changelog
 
 * **1.0** – initial contract.
 * **1.1** – clients are now a React Native app (Android, iOS, web). Native clients have no `Origin` header. No payload changes.
 * **1.2** – `settings.timer` accepts any integer 0 or 15–600 (was 0/45/90/150). Invalid values → `INVALID_NUMBER`.
+* **1.3** – additive: `game:abort`; error codes `NO_GUESS`, `ROOM_FULL`, `SERVER_FULL`, `INTERNAL`; `room:event` kind `abort`;
+  documented `room:event` data, host hand-over after 60 s offline, games stopped when a required player leaves,
+  repeated joins, several tabs, text clean-up, and the `Origin` that native apps really send.

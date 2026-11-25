@@ -16,7 +16,7 @@ so everything you decide has to be committed and pushed.
 | `frontend/**` | Frontend agent only |
 | `backend/**` | Backend agent only |
 | `.github/workflows/pages.yml` | Frontend agent |
-| `render.yaml` | Backend agent |
+| `render.yaml`, `.github/workflows/backend.yml` | Backend agent |
 | `docs/PROTOCOL.md` | Both, following the change process in §4 |
 | `docs/STATUS.md` | Both, but only your own section |
 | `docs/FRONTEND.md` / `docs/BACKEND.md` | Their owner |

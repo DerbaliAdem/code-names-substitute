@@ -17,6 +17,8 @@ them (Rules screen, disabled buttons, error messages from the server).
 1. The current team's spymaster gives a clue: **one word** and a **number from 0 to 9**.
    * The word is trimmed and uppercased, and can't contain whitespace.
    * It's invalid if it equals an unrevealed board word, or if either one contains the other and both are longer than 2 letters.
+     The comparison ignores case, accents, punctuation and invisible characters, and a clue needs at least one letter or digit
+     and at most 32 characters.
    * The number can't be larger than the team's remaining cards. 0 means unlimited guesses.
 2. The current team's agents guess one card at a time:
    * **Own colour:** `guessesThisTurn += 1`. If `number > 0` and `guessesThisTurn ≥ number + 1`, the turn ends.

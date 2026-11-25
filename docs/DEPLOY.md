@@ -24,22 +24,24 @@ The app stores are optional extras that cost money.
        runtime: node
        plan: free
        rootDir: backend
-       buildCommand: npm ci && npm run build
+       buildCommand: npm ci --include=dev && npm run build && npm prune --omit=dev
        startCommand: npm start
        healthCheckPath: /health
        autoDeploy: true
        envVars:
          - key: NODE_VERSION
-           value: "20"
+           value: "22"
          - key: CORS_ORIGIN
-           value: https://derbaliadem.github.io,http://localhost:8081,http://localhost:5173
+           value: https://derbaliadem.github.io,https://codenames-pulp-api.onrender.com,http://localhost:8081,http://localhost:5173
+         - key: CLIENT_IP_HEADER
+           value: cf-connecting-ip
    ```
 2. **One-time owner step:** sign in at <https://render.com> with GitHub, then **New → Blueprint** → this repo → **Apply**.
    Every later push to `main` redeploys automatically.
-3. If Render gives a different URL, update `docs/PROTOCOL.md` §1, `frontend/src/config.ts` and `frontend/eas.json`.
+3. If Render gives a different URL, update `docs/PROTOCOL.md` §1, `frontend/src/config.ts`, `frontend/eas.json` and `CORS_ORIGIN` in `render.yaml`.
 
 Free-tier limits: the service sleeps after 15 minutes idle (about 30–60 s to wake, and the app shows a banner while it does),
-there are 750 instance-hours a month, and memory is wiped on restart. To avoid cold starts for free, point
+there are 750 instance-hours a month, and memory is wiped on restart. Keep **one** instance: rooms live in memory. To avoid cold starts for free, point
 <https://uptimerobot.com> at `/health` every 10 minutes.
 
 ## Web app: GitHub Pages (frontend agent + one-time owner step)

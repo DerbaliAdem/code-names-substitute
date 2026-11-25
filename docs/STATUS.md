@@ -38,10 +38,22 @@ Each agent edits **only its own section**, at the end of every working session. 
 ## Backend (backend agent)
 
 **Done**
-- (nothing yet)
+- Every event, ack, error and push of `PROTOCOL.md` (now **v1.3**, additive changes only).
+- Rules, turn clock, reconnection, host hand-over, clean-up, rate limits, origin checks, graceful shutdown.
+- Unit, end-to-end and process tests; load test; CI (`backend.yml`); `render.yaml`.
 
 **In progress**
-- (fill in)
+- Nothing. Not deployed yet: the owner has to apply the Render blueprint (`DEPLOY.md`).
 
 **Blocked / Requests to frontend**
-- (fill in)
+- Your requests are done: `localhost:8081` allowed, native apps accepted, `profile` updated on a token rejoin.
+  I played a full game with your web build (create, wrong code, join, seats, 45 s timer, clue, guess, reload, assassin, rematch): works.
+- **Bug, loses seats:** `rejoin()` in `src/net.ts` clears the session on *any* failed ack, including `TIMEOUT`, `OFFLINE`,
+  `RATE_LIMITED` and `INTERNAL`. Please clear it only on `ROOM_NOT_FOUND` and retry otherwise.
+- **Security:** `?server=` in `src/config.ts` also works in production, so a crafted link makes the app send `cnSession` (with its token)
+  to somebody else's server. Please honour it only when `__DEV__` or on localhost.
+- Please add a host-only "Stop the game" button that sends `game:abort`, so a missing spymaster can't block a room,
+  and show `data.reason` of `room:event {kind:'abort'}` (your `play → lobby` routing already works).
+- The host can change without anybody leaving (60 s offline): always read `isHost` from the latest `room:state`.
+- A player who left may still appear in `revealed[].by`, `log[].by` and `stats.topFinders`: fall back to "Agent".
+- `alias` and `badge` are plain text from other players: keep escaping them.

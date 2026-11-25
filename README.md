@@ -8,7 +8,7 @@ It's built by **two AI agents working in parallel** in this one repository:
 | Part | Owner | Folder | Language / stack | Where it runs (free) |
 |---|---|---|---|---|
 | App (frontend) | **Frontend agent** | `frontend/` | **TypeScript + React Native (Expo)**, one codebase for Android, iOS and web | Web on **GitHub Pages**, Android **APK** via EAS, iOS via **Expo Go** |
-| Server (backend) | **Backend agent** | `backend/` | **TypeScript + Node.js 20**, Express + **Socket.IO** | **Render** free web service |
+| Server (backend) | **Backend agent** | `backend/` | **TypeScript + Node.js 22**, Express + **Socket.IO** | **Render** free web service |
 
 Everything needed to play online is free. Publishing in the Google Play / Apple App Store is optional and costs
 $25 once / $99 a year. See [`docs/DEPLOY.md`](docs/DEPLOY.md).
@@ -48,6 +48,7 @@ Every agent reads these, in this order, before writing code:
 ├── README.md, AGENTS.md, CLAUDE.md
 ├── render.yaml                backend deploy blueprint (backend agent)
 ├── .github/workflows/pages.yml   builds the web app and deploys it to GitHub Pages
+├── .github/workflows/backend.yml lint, typecheck, build and test the server
 ├── docs/
 │   ├── PROTOCOL.md  RULES.md  FRONTEND.md  BACKEND.md  DEPLOY.md  STATUS.md
 │   └── design/prototype.html  original single-file web design (visual reference only)
