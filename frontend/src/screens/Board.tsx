@@ -48,6 +48,9 @@ function WordCard({ v, i, canGuess, size, onError }: { v: RoomView; i: number; c
   const flip = useRef(new Animated.Value(1)).current;
   const pop = useRef(new Animated.Value(0)).current;
   const shake = useRef(new Animated.Value(0)).current;
+  // The comic stamp exists only while it animates, so an interrupted animation can never leave it over the word.
+  const [popping, setPopping] = useState(false);
+  useEffect(() => { if (!popping) return; const t = setTimeout(() => setPopping(false), 1400); return () => clearTimeout(t); }, [popping]);
 
   useEffect(() => {
     if (!r) { if (shown) setShown(false); return; }   // rematch: new board
@@ -55,6 +58,7 @@ function WordCard({ v, i, canGuess, size, onError }: { v: RoomView; i: number; c
     if (reduced) { setShown(true); return; }
     Animated.timing(flip, { toValue: 0, duration: 140, easing: Easing.in(Easing.quad), useNativeDriver: ND }).start(() => {
       setShown(true);
+      setPopping(true);
       const kick = (x: number) => Animated.timing(shake, { toValue: x, duration: 45, useNativeDriver: ND });
       Animated.parallel([
         Animated.spring(flip, { toValue: 1, friction: 4, tension: 170, useNativeDriver: ND }),
@@ -64,7 +68,7 @@ function WordCard({ v, i, canGuess, size, onError }: { v: RoomView; i: number; c
           Animated.timing(pop, { toValue: 2, duration: 260, useNativeDriver: ND }),
         ]),
         r.type === 'x' ? Animated.sequence([kick(-6), kick(6), kick(-5), kick(5), kick(-3), kick(0)]) : Animated.delay(0),
-      ]).start(() => pop.setValue(0));
+      ]).start(() => { pop.setValue(0); setPopping(false); });
     });
   }, [!!r]); // eslint-disable-line react-hooks/exhaustive-deps
 
@@ -95,7 +99,7 @@ function WordCard({ v, i, canGuess, size, onError }: { v: RoomView; i: number; c
               <Text numberOfLines={2} adjustsFontSizeToFit style={{ fontFamily: r && shown ? FONT.display : FONT.bold, fontSize: size, textTransform: 'uppercase', color: st.fg, textAlign: 'center', letterSpacing: 0.5 }}>{word}</Text>
             </View>
           </Animated.View>
-          {r && (
+          {r && popping && (
             <Animated.View pointerEvents="none" style={{ position: 'absolute', left: -12, right: -12, top: 0, bottom: 0, alignItems: 'center', justifyContent: 'center',
               opacity: pop.interpolate({ inputRange: [0, 0.3, 1, 2], outputRange: [0, 1, 1, 0] }),
               transform: [{ scale: pop.interpolate({ inputRange: [0, 1, 2], outputRange: [0.2, 1, 1.35] }) }, { rotate: '-8deg' }] }}>

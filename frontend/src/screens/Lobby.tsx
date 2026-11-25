@@ -1,6 +1,6 @@
 // Lobby = "showdown table": room ticket, red half vs blue half around a round table, timer slider, begin bar.
 import * as Clipboard from 'expo-clipboard';
-import React, { useState } from 'react';
+import React, { useEffect, useRef, useState } from 'react';
 import { Platform, Pressable, Share, Text, View, type GestureResponderEvent, type ViewStyle } from 'react-native';
 import { Avatar, Body, Btn, Burst, Cap, H3, Note, Panel } from '../components/ui';
 import { leaveRoom, request } from '../net';
@@ -99,22 +99,34 @@ function VsBurst() {
   );
 }
 
-function TimerSlider({ value, enabled, onChange }: { value: number; enabled: boolean; onChange: (s: number) => void }) {
+function TimerSlider({ value, enabled, note, onChange }: { value: number; enabled: boolean; note: string; onChange: (s: number) => void }) {
   const { c } = useTheme();
   const [w, setW] = useState(1);
   const [drag, setDrag] = useState<number | null>(null);
-  const shown = drag ?? value;
+  // Taps on − / + build on a local value and are sent once the player pauses, so quick taps are never lost
+  // waiting for the server's answer.
+  const [pend, setPend] = useState<number | null>(null);
+  const sendTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
+  useEffect(() => { if (pend !== null && pend === value) setPend(null); }, [value]); // eslint-disable-line react-hooks/exhaustive-deps
+  useEffect(() => () => { if (sendTimer.current) clearTimeout(sendTimer.current); }, []);
+  const shown = drag ?? pend ?? value;
   const f = Math.min(1, shown / MAX_TIMER);
   const toSec = (e: GestureResponderEvent) => {
     const x = Math.max(0, Math.min(w, e.nativeEvent.locationX));
     const s = Math.round(((x / w) * MAX_TIMER) / 15) * 15;
     return s > 0 && s < 15 ? 15 : s;
   };
-  const step = (d: number) => { const s = Math.max(0, Math.min(MAX_TIMER, value + d)); onChange(s > 0 && s < 15 ? (d > 0 ? 15 : 0) : s); };
+  const step = (d: number) => {
+    let s = Math.max(0, Math.min(MAX_TIMER, (pend ?? value) + d));
+    if (s > 0 && s < 15) s = d > 0 ? 15 : 0;
+    setPend(s);
+    if (sendTimer.current) clearTimeout(sendTimer.current);
+    sendTimer.current = setTimeout(() => { if (s !== value) onChange(s); else setPend(null); }, 350);
+  };
   return (
     <View style={{ gap: 6 }}>
       <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' }}>
-        <Cap style={{ color: INK }}>Turn timer{enabled ? '' : ' · host only'}</Cap>
+        <Cap style={{ color: INK }}>Turn timer{note}</Cap>
         <Text style={{ fontFamily: FONT.display, fontSize: 24, color: INK }}>{fmt(shown)}</Text>
       </View>
       <View style={{ flexDirection: 'row', alignItems: 'center', gap: 10 }}>
@@ -145,6 +157,7 @@ export default function Lobby() {
   const { view: v } = useApp();
   const { c } = useTheme();
   const [msg, setMsg] = useState('');
+  const [stopAsk, setStopAsk] = useState(false);
   const flash = (res: { ok: boolean; error?: { message: string } }) => setMsg(res.ok ? '' : res.error!.message);
 
   if (!v) {
@@ -169,8 +182,8 @@ export default function Lobby() {
     }
   }
   const seat = async (team: Team, role: Role) => flash(await request('seat:take', { team, role }));
-  const ticketBtn = (label: string, onPress: () => void) => (
-    <Pressable accessibilityRole="button" onPress={onPress} style={{ backgroundColor: '#fff9e0', borderWidth: 2, borderColor: INK, paddingHorizontal: 8, paddingVertical: 2 }}>
+  const ticketBtn = (label: string, a11y: string, onPress: () => void) => (
+    <Pressable accessibilityRole="button" accessibilityLabel={a11y} onPress={onPress} style={{ backgroundColor: '#fff9e0', borderWidth: 2, borderColor: INK, paddingHorizontal: 8, paddingVertical: 2 }}>
       <Text style={{ fontFamily: FONT.display, fontSize: 16, color: INK }}>{label}</Text>
     </Pressable>
   );
@@ -191,8 +204,8 @@ export default function Lobby() {
             <Text selectable style={{ fontFamily: FONT.display, fontSize: 42, letterSpacing: 10, lineHeight: 46, color: INK }}>{v.code}</Text>
           </View>
           <View style={{ borderLeftWidth: 3, borderStyle: 'dashed', borderLeftColor: INK, paddingLeft: 10, gap: 6 }}>
-            {ticketBtn(Platform.OS === 'web' ? 'INVITE' : 'SHARE', invite)}
-            {ticketBtn('LEAVE', leaveRoom)}
+            {ticketBtn(Platform.OS === 'web' ? 'INVITE' : 'SHARE', Platform.OS === 'web' ? 'Copy the invite link' : 'Share the room code', invite)}
+            {ticketBtn('LEAVE', 'Leave the room', leaveRoom)}
           </View>
         </View>
       </View>
@@ -232,13 +245,17 @@ export default function Lobby() {
 
       {/* bottom bar: timer + begin */}
       <View style={{ backgroundColor: '#f6e7a8', borderWidth: 4, borderColor: INK, padding: 12, gap: 10 }}>
-        <TimerSlider value={v.settings.timer} enabled={lobby && host} onChange={async (timer) => flash(await request('settings:update', { settings: { timer } }))} />
+        <TimerSlider value={v.settings.timer} enabled={lobby && host} note={!lobby ? ' · locked during the game' : host ? '' : ' · host only'} onChange={async (timer) => flash(await request('settings:update', { settings: { timer } }))} />
         <Pressable accessibilityRole="button" accessibilityState={{ disabled: !beginOn }} disabled={!beginOn}
           onPress={async () => { if (!lobby) go('board'); else flash(await request('game:start')); }}
           style={{ backgroundColor: beginOn ? c.red : '#d9c79a', borderWidth: 3, borderColor: INK, paddingVertical: 8, alignItems: 'center' }}>
           <Text style={{ fontFamily: FONT.display, fontSize: 24, letterSpacing: 1, color: beginOn ? '#fff' : INK, textShadowColor: beginOn ? INK : 'transparent', textShadowOffset: { width: 2, height: 2 }, textShadowRadius: 0 }}>{beginLabel}</Text>
         </Pressable>
       </View>
+      {!lobby && host && (
+        <Btn small variant="alt" label={stopAsk ? 'Tap again to stop the game for everyone' : 'Stop the game'}
+          onPress={async () => { if (!stopAsk) { setStopAsk(true); setTimeout(() => setStopAsk(false), 4000); return; } setStopAsk(false); flash(await request('game:abort')); }} />
+      )}
       <Note text={msg || (lobby && !you?.team ? 'Tap a + seat to join a team.' : '')} />
     </View>
   );
