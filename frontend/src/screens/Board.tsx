@@ -1,6 +1,5 @@
 import React, { useEffect, useRef, useState } from 'react';
 import { Animated, Easing, Platform, Pressable, TextInput, View, useWindowDimensions } from 'react-native';
-import { scrollInputIntoView } from '../keyboardScroll';
 import { ND, useReducedMotion } from '../motion';
 import { Body, Btn, Burst, Cap, H3, Note, Panel, Row, Tag } from '../components/ui';
 import { leaveRoom, request } from '../net';
@@ -181,7 +180,7 @@ function ClueForm({ v }: { v: RoomView }) {
     <Panel>
       <Cap>Your clue</Cap>
       <View style={{ backgroundColor: '#fff', borderWidth: 3, borderColor: INK, borderRadius: 60, paddingVertical: 10, paddingHorizontal: 24 }}>
-        <TextInput value={word} onChangeText={(t) => { setWord(t.toUpperCase().replace(/\s+/g, '')); if (msg) setMsg(''); }} onFocus={scrollInputIntoView} placeholder="ONE WORD" placeholderTextColor="#16130e55"
+        <TextInput value={word} onChangeText={(t) => { setWord(t.toUpperCase().replace(/\s+/g, '')); if (msg) setMsg(''); }} placeholder="ONE WORD" placeholderTextColor="#16130e55"
           maxLength={16} autoCapitalize="characters" autoCorrect={false} spellCheck={false} autoComplete="off" returnKeyType="send" accessibilityLabel="Clue word" onSubmitEditing={send}
           style={[{ fontFamily: FONT.display, fontSize: word.length > 10 ? 30 : 38, letterSpacing: 2, textAlign: 'center', color: INK, paddingVertical: 0 }, Platform.OS === 'web' ? ({ outlineStyle: 'none' } as object) : null]} />
         <Text style={{ position: 'absolute', right: 16, bottom: 4, fontFamily: FONT.bold, fontSize: 11, letterSpacing: 1, color: '#16130e88' }}>{word.length}/16</Text>
