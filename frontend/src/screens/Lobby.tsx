@@ -273,9 +273,7 @@ export default function Lobby() {
         <View style={{ backgroundColor: CREAM, borderWidth: 3, borderColor: INK, padding: 10, gap: 8 }}>
           {unseated.map((p) => (
             <View key={p.id} style={{ flexDirection: 'row', alignItems: 'center', gap: 10 }}>
-              <View style={{ width: 48, height: 48 }}>
-                <Avatar small={false} name={p.name} color={p.color} badge={p.badge} />
-              </View>
+              <Avatar small name={p.name} color={p.color} badge={p.badge} />
               <Text style={{ fontFamily: FONT.bold, fontSize: 14, letterSpacing: 0.5, color: INK, flex: 1 }}>
                 {p.id === v.you ? 'YOU' : p.name.toUpperCase()}, IN THE ROOM, NO TEAM YET
               </Text>

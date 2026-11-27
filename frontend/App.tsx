@@ -12,6 +12,7 @@ import { BoardDock } from './src/screens/Board';
 import FxLayer from './src/components/FxLayer';
 import UpdatePrompt from './src/components/UpdatePrompt';
 import { detectFx, fire, screenShake } from './src/fx';
+import { registerKeyboardScroll } from './src/keyboardScroll';
 import { connect } from './src/net';
 import type { RoomView } from './src/protocol';
 import Board from './src/screens/Board';
@@ -61,6 +62,7 @@ function Main() {
   const Current = SCREENS[screen] ?? Home;
 
   useEffect(() => {
+    registerKeyboardScroll(scroll);
     const off = onViewChange((a, b) => { playDiff(a, b); detectFx(a, b); route(a, b); });
     (async () => {
       await loadPersisted();

@@ -40,10 +40,18 @@ Each agent edits **only its own section**, at the end of every working session. 
   a cream "MISSION BRIEFING" checklist with a done/4 badge, ENGLISH/العربية toggle, a −/+ turn-timer stepper, and a
   START GAME bar that shows the not-ready reason. Same seat/ready/timer/lang wiring as before, just restyled.
   Checked in the web build: taking seats, the checklist and begin label update live.
-- Keyboard-covers-input fix: `app.json` sets Android `softwareKeyboardLayoutMode: "resize"`, and `App.tsx` wraps the
-  screen in a `KeyboardAvoidingView` (`padding` on iOS). Covers the room-code boxes, code name and clue fields.
-  Not re-tested on a physical device/emulator this session — only typechecked and run in the web build (no on-screen
-  keyboard there to reproduce the original bug), so please flag it if it still happens on Android/iOS.
+- Keyboard-covers-input, take 2: the user confirmed on a real phone (screen recording) that `windowSoftInputMode:
+  "resize"` + `KeyboardAvoidingView` alone (v1.2.0) wasn't enough — `resize` only shrinks the available height, it
+  never scrolls the page, so a field below the very top still ends up under the keyboard. Added
+  `src/keyboardScroll.ts`: a `registerKeyboardScroll(scrollRef)` call from `App.tsx`, and `onFocus={scrollInputIntoView}`
+  on the code name field, the room-code boxes and the clue field. On focus it measures the field against the
+  ScrollView (new-architecture `measureLayout` on the host instance, not the old numeric node handle) and scrolls it
+  ~80px below the top. No-ops harmlessly on web (no `measureLayout` there) — confirmed no console errors on focus.
+  Not yet confirmed on a real phone this round either (no device/emulator in this sandbox) — please retest and say
+  if any field still needs more offset or another field was missed.
+- Lobby bugfix: the "in the room, no team yet" card used the 60px `Avatar` inside a 48px box, so the shadow/star
+  icon stuck out past the card border (screenshot from the user). Switched to the small (38px) avatar, matching
+  the seat avatars elsewhere.
 
 **In progress**
 - Waiting for a running backend to do the two-player end-to-end test (web + Expo Go).

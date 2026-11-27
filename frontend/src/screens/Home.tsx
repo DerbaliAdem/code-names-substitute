@@ -3,6 +3,7 @@ import React, { useEffect, useRef, useState } from 'react';
 import { Pressable, TextInput, View } from 'react-native';
 import { Btn, Cap, Inked, Note, Panel } from '../components/ui';
 import { Hero, heroFor } from '../components/Hero';
+import { scrollInputIntoView } from '../keyboardScroll';
 import { enterRoom, request } from '../net';
 import { getState, go, setProfile, setState, useApp } from '../store';
 import { ALIASES, BADGES, COLORS, FONT, INK, useTheme } from '../theme';
@@ -35,7 +36,7 @@ function Dossier() {
           </Inked>
           <View style={{ flex: 1, gap: 4 }}>
             <Cap>Code name</Cap>
-            <TextInput value={p.name} onChangeText={(t) => setProfile({ name: t })} maxLength={14} placeholder="AGENT" placeholderTextColor={c.ink + '66'} autoCorrect={false} spellCheck={false} accessibilityLabel="Code name"
+            <TextInput value={p.name} onChangeText={(t) => setProfile({ name: t })} onFocus={scrollInputIntoView} maxLength={14} placeholder="AGENT" placeholderTextColor={c.ink + '66'} autoCorrect={false} spellCheck={false} accessibilityLabel="Code name"
               style={{ fontFamily: FONT.display, fontSize: 30, letterSpacing: 1, color: c.ink, borderBottomWidth: 3, borderStyle: 'dashed', borderBottomColor: c.ink, paddingVertical: 0, textTransform: 'uppercase' }} />
             <Pressable accessibilityRole="button" accessibilityLabel={`Alias ${p.alias}, tap to change`} onPress={() => setProfile({ alias: ALIASES[(ALIASES.indexOf(p.alias) + 1) % ALIASES.length] })}>
               <Text style={{ fontFamily: FONT.bold, fontSize: 15, letterSpacing: 1, color: c.ink }}>ALIAS: {p.alias.toUpperCase()} ↻</Text>
@@ -80,7 +81,7 @@ function CodeBoxes({ value, onChange, onSubmit }: { value: string; onChange: (v:
           );
         })}
       </View>
-      <TextInput value={value} onChangeText={(t) => onChange(clean(t))} onFocus={() => setFocus(true)} onBlur={() => setFocus(false)} onSubmitEditing={onSubmit}
+      <TextInput value={value} onChangeText={(t) => onChange(clean(t))} onFocus={(e) => { setFocus(true); scrollInputIntoView(e); }} onBlur={() => setFocus(false)} onSubmitEditing={onSubmit}
         maxLength={5} autoCapitalize="characters" autoCorrect={false} accessibilityLabel="Room code, 5 letters" caretHidden
         style={{ position: 'absolute', left: 0, right: 0, top: 0, bottom: 0, opacity: 0.01, color: 'transparent', fontSize: 1 }} />
     </View>
