@@ -61,6 +61,18 @@ jobs:
           RELEASE_KEYSTORE_PASSWORD: ${{ secrets.ANDROID_KEYSTORE_PASSWORD }}
           RELEASE_KEY_ALIAS: ${{ secrets.ANDROID_KEY_ALIAS }}
           RELEASE_KEY_PASSWORD: ${{ secrets.ANDROID_KEY_PASSWORD }}
+      # Print the certificate actually embedded in the APK, so every build's signer is visible and
+      # comparable in the log -- this is the ground truth, not an assumption about which signing
+      # config Gradle picked.
+      - name: Verify signer
+        working-directory: frontend
+        run: |
+          APKSIGNER=$(find "$ANDROID_HOME" -name apksigner -type f | sort -V | tail -1)
+          echo "using $APKSIGNER"
+          for f in out/*.apk; do
+            echo "=== $f ==="
+            "$APKSIGNER" verify --print-certs "$f" || echo "APKSIGNER VERIFY FAILED for $f"
+          done
       - uses: actions/upload-artifact@v4
         with:
           name: codenames-pulp-apk
