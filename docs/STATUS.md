@@ -40,15 +40,17 @@ Each agent edits **only its own section**, at the end of every working session. 
   a cream "MISSION BRIEFING" checklist with a done/4 badge, ENGLISH/العربية toggle, a −/+ turn-timer stepper, and a
   START GAME bar that shows the not-ready reason. Same seat/ready/timer/lang wiring as before, just restyled.
   Checked in the web build: taking seats, the checklist and begin label update live.
-- Keyboard-covers-input, take 2: the user confirmed on a real phone (screen recording) that `windowSoftInputMode:
-  "resize"` + `KeyboardAvoidingView` alone (v1.2.0) wasn't enough — `resize` only shrinks the available height, it
-  never scrolls the page, so a field below the very top still ends up under the keyboard. Added
-  `src/keyboardScroll.ts`: a `registerKeyboardScroll(scrollRef)` call from `App.tsx`, and `onFocus={scrollInputIntoView}`
-  on the code name field, the room-code boxes and the clue field. On focus it measures the field against the
-  ScrollView (new-architecture `measureLayout` on the host instance, not the old numeric node handle) and scrolls it
-  ~80px below the top. No-ops harmlessly on web (no `measureLayout` there) — confirmed no console errors on focus.
-  Not yet confirmed on a real phone this round either (no device/emulator in this sandbox) — please retest and say
-  if any field still needs more offset or another field was missed.
+- **Keyboard-covers-input, fixed for real (v1.2.4):** v1.2.0–v1.2.3 all tried `windowSoftInputMode: "resize"` plus
+  various JS-side scroll-into-view logic (`KeyboardAvoidingView`, manual `measureLayout`+`scrollTo`,
+  `scrollResponderScrollNativeHandleToKeyboard`). None of it worked — confirmed live on the user's phone with
+  `adb`+Metro: with `resize` set, `Dimensions.get('window')` never changes when the keyboard opens, and neither a
+  programmatic `scrollTo` nor even a manual swipe can scroll the ScrollView at all while the keyboard is up.
+  Root cause: the generated `AndroidManifest`'s `MainActivity` declares `android:configChanges` including
+  `screenSize` (plus `screenLayout`, `smallestScreenSize`), which suppresses the relayout `adjustResize` depends on
+  — so resize mode was never actually resizing anything. Switched to `windowSoftInputMode: "pan"` (Android's own
+  built-in handling, no JS needed) and deleted `src/keyboardScroll.ts` and all its call sites. Verified on-device:
+  both the room-code field (bottom of Home) and the code-name field (top of Home) now stay visible above the
+  keyboard. Didn't re-test the clue field (Board) directly, but it's the same ScrollView/mechanism.
 - Lobby bugfix: the "in the room, no team yet" card used the 60px `Avatar` inside a 48px box, so the shadow/star
   icon stuck out past the card border (screenshot from the user). Switched to the small (38px) avatar, matching
   the seat avatars elsewhere.
