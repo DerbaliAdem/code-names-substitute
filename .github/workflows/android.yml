@@ -35,11 +35,11 @@ jobs:
       - run: npm ci
       - run: npx tsc --noEmit
       - run: npx expo prebuild -p android --no-install
-      # Decode the persistent release keystore (if the secret is set) so every release is signed
-      # with the same key and installs as an update over the previous one, instead of the
-      # template's debug keystore (which Android would treat as a different, conflicting app).
+      # Decode the persistent release keystore so every release is signed with the same key and
+      # installs as an update over the previous one, instead of the template's debug keystore
+      # (which Android would treat as a different, conflicting app). If the secret is ever empty
+      # the file ends up empty too; the Gradle plugin then falls back to the debug keystore.
       - name: Decode release keystore
-        if: ${{ secrets.ANDROID_KEYSTORE_BASE64 != '' }}
         working-directory: frontend/android/app
         run: echo "$ANDROID_KEYSTORE_BASE64" | base64 -d > release.keystore
         env:
