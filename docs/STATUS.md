@@ -23,6 +23,18 @@ Each agent edits **only its own section**, at the end of every working session. 
 - Custom turn timer: presets plus any value from 15 to 600 s (protocol 1.2).
 - GitHub Pages workflow now builds the Expo web export. `eas.json` is ready for free Android APK builds.
 - Removed the victory jingle (`win.wav`); short effect sounds (tap, boom, tick, clue, laugh) and haptics stay.
+- **Fixed "install" replacing the app instead of updating it (v1.2.1):** release APKs weren't all signed with
+  the same key (CI used the React Native template's default debug keystore; the phone's copy may have come from
+  an earlier EAS build with a different key), so Android saw each release as a different, conflicting app.
+  Added a persistent release keystore (`ANDROID_KEYSTORE_BASE64`/`_PASSWORD`, `ANDROID_KEY_ALIAS`/`ANDROID_KEY_PASSWORD`
+  repo secrets, not in git) and `frontend/plugins/withReleaseSigning.js`, an Expo config plugin that points
+  `android/app/build.gradle`'s release build type at it (falls back to the debug keystore if the file/secret is
+  ever missing, so local `gradlew assembleRelease` still works). `android.yml` decodes the secret before building.
+  v1.2.0 and earlier used a different/inconsistent key, so anyone with one of those installed needs to uninstall
+  it once; from v1.2.1 on, every release should update in place. Verified the generated Gradle file picks the
+  right signing config and the CI build succeeds; couldn't verify the APK's embedded certificate byte-for-byte
+  (no Android SDK/`apksigner` in this environment) — the real test is that v1.2.1 and the next release install
+  over each other cleanly.
 - **Lobby rebuilt as "poster cards"**: yellow room ticket (offset red shadow) with INVITE/SHARE + LEAVE, two stacked
   RED/BLUE team cards with a round yellow VS badge overlapping between them (spymaster seat + 3 agent seats each),
   a cream "MISSION BRIEFING" checklist with a done/4 badge, ENGLISH/العربية toggle, a −/+ turn-timer stepper, and a
