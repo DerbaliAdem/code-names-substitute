@@ -38,6 +38,7 @@
       "output": "single"
     },
     "plugins": [
+      "./plugins/withReleaseSigning",
       "expo-font",
       [
         "expo-audio",

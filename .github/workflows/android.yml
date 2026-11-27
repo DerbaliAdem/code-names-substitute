@@ -35,6 +35,15 @@ jobs:
       - run: npm ci
       - run: npx tsc --noEmit
       - run: npx expo prebuild -p android --no-install
+      # Decode the persistent release keystore (if the secret is set) so every release is signed
+      # with the same key and installs as an update over the previous one, instead of the
+      # template's debug keystore (which Android would treat as a different, conflicting app).
+      - name: Decode release keystore
+        if: ${{ secrets.ANDROID_KEYSTORE_BASE64 != '' }}
+        working-directory: frontend/android/app
+        run: echo "$ANDROID_KEYSTORE_BASE64" | base64 -d > release.keystore
+        env:
+          ANDROID_KEYSTORE_BASE64: ${{ secrets.ANDROID_KEYSTORE_BASE64 }}
       # One small APK per processor type instead of one big one with every type inside.
       - name: Build
         working-directory: frontend/android
@@ -48,6 +57,10 @@ jobs:
         env:
           NODE_ENV: production
           EXPO_PUBLIC_SERVER_URL: https://codenames-pulp-api.onrender.com
+          RELEASE_KEYSTORE_PATH: release.keystore
+          RELEASE_KEYSTORE_PASSWORD: ${{ secrets.ANDROID_KEYSTORE_PASSWORD }}
+          RELEASE_KEY_ALIAS: ${{ secrets.ANDROID_KEY_ALIAS }}
+          RELEASE_KEY_PASSWORD: ${{ secrets.ANDROID_KEY_PASSWORD }}
       - uses: actions/upload-artifact@v4
         with:
           name: codenames-pulp-apk
