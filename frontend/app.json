@@ -11,6 +11,7 @@
       "bundleIdentifier": "com.derbaliadem.codenamespulp"
     },
     "android": {
+      "softwareKeyboardLayoutMode": "resize",
       "adaptiveIcon": {
         "backgroundColor": "#FFD23C",
         "foregroundImage": "./assets/android-icon-foreground.png",

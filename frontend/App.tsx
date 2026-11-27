@@ -6,7 +6,7 @@ import { BarlowCondensed_800ExtraBold } from '@expo-google-fonts/barlow-condense
 import { useFonts } from 'expo-font';
 import { StatusBar } from 'expo-status-bar';
 import React, { useEffect, useRef } from 'react';
-import { Animated, Linking, Pressable, ScrollView, View, type ScrollViewInstance } from 'react-native';
+import { Animated, KeyboardAvoidingView, Linking, Platform, Pressable, ScrollView, View, type ScrollViewInstance } from 'react-native';
 import { SafeAreaProvider, SafeAreaView, useSafeAreaInsets } from 'react-native-safe-area-context';
 import { BoardDock } from './src/screens/Board';
 import FxLayer from './src/components/FxLayer';
@@ -85,12 +85,14 @@ function Main() {
         </View>
       )}
       <Animated.View style={{ flex: 1, transform: [{ translateX: screenShake }] }}>
-        <ScrollView ref={scroll} keyboardShouldPersistTaps="handled" contentContainerStyle={{ padding: 16, paddingBottom: 48 }}>
-          <View style={{ width: '100%', maxWidth: 720, alignSelf: 'center', gap: 14 }}>
-            {screen !== 'board' && <Corner />}
-            {ready ? <Current /> : null}
-          </View>
-        </ScrollView>
+        <KeyboardAvoidingView style={{ flex: 1 }} behavior={Platform.OS === 'ios' ? 'padding' : undefined} keyboardVerticalOffset={insets.top}>
+          <ScrollView ref={scroll} keyboardShouldPersistTaps="handled" contentContainerStyle={{ padding: 16, paddingBottom: 48 }}>
+            <View style={{ width: '100%', maxWidth: 720, alignSelf: 'center', gap: 14 }}>
+              {screen !== 'board' && <Corner />}
+              {ready ? <Current /> : null}
+            </View>
+          </ScrollView>
+        </KeyboardAvoidingView>
       </Animated.View>
       {ready && screen === 'board' && <BoardDock bottom={insets.bottom} />}
       <FxLayer />

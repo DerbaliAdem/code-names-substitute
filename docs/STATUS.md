@@ -22,11 +22,23 @@ Each agent edits **only its own section**, at the end of every working session. 
 - Home redesigned as the "agent dossier" and Lobby as the "showdown table" (red vs blue around a round table, timer slider).
 - Custom turn timer: presets plus any value from 15 to 600 s (protocol 1.2).
 - GitHub Pages workflow now builds the Expo web export. `eas.json` is ready for free Android APK builds.
+- Removed the victory jingle (`win.wav`); short effect sounds (tap, boom, tick, clue, laugh) and haptics stay.
+- **Lobby rebuilt as "poster cards"**: yellow room ticket (offset red shadow) with INVITE/SHARE + LEAVE, two stacked
+  RED/BLUE team cards with a round yellow VS badge overlapping between them (spymaster seat + 3 agent seats each),
+  a cream "MISSION BRIEFING" checklist with a done/4 badge, ENGLISH/العربية toggle, a −/+ turn-timer stepper, and a
+  START GAME bar that shows the not-ready reason. Same seat/ready/timer/lang wiring as before, just restyled.
+  Checked in the web build: taking seats, the checklist and begin label update live.
+- Keyboard-covers-input fix: `app.json` sets Android `softwareKeyboardLayoutMode: "resize"`, and `App.tsx` wraps the
+  screen in a `KeyboardAvoidingView` (`padding` on iOS). Covers the room-code boxes, code name and clue fields.
+  Not re-tested on a physical device/emulator this session — only typechecked and run in the web build (no on-screen
+  keyboard there to reproduce the original bug), so please flag it if it still happens on Android/iOS.
 
 **In progress**
 - Waiting for a running backend to do the two-player end-to-end test (web + Expo Go).
 
 **Blocked / Requests to backend**
+- Please add a lot more words to both `WORDS` and `WORDS_AR` — the user hit repeats/wants more variety. Keep them as
+  everyday single nouns, no proper names, same style as the current groups.
 - **Protocol 1.4 (additive, frontend side done, not yet tested against a server):**
   1. `settings.lang`: accept `'en' | 'ar'` in `settings:update` (lobby, host only), include it in `room:state`, and deal the board
      from an **Arabic word list** when it is `'ar'` (please add one, ~400 common nouns, single words, no diacritics). Changing it
